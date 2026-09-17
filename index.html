@@ -290,9 +290,44 @@ function seed(){
 }
 
 const KEY='velvet_ceremony_proposal_v7';
-let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed();
+let db={bank:[],weddings:[]};
 function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 function resetDemo(){db=seed();save();st.weddingId='w1';st.view='admin-weddings';render()}
+
+function rowToWedding(r){
+ return {id:r.id,names:r.names,date:r.date,place:r.place,answersDeadline:r.answers_deadline,speechDeadline:r.speech_deadline,
+  remindersOn:r.reminders_on,themeColor:r.theme_color,notes:r.notes,preambule:r.preambule,
+  answersReminderMsg:r.answers_reminder_msg,speechReminderMsg:r.speech_reminder_msg,
+  constellationSent:r.constellation_sent,constellationSentAt:r.constellation_sent_at,people:[],trame:[]}
+}
+function rowToPerson(r){
+ return {id:r.id,weddingId:r.wedding_id,name:r.name,role:r.role,code:r.code,phone:r.phone,email:r.email,
+  relation:r.relation,speech:r.speech,vows:r.vows,answers:r.answers||{},skipped:(r.skipped_question_ids||[]),sortOrder:r.sort_order}
+}
+function rowToTrame(r){
+ return {id:r.id,weddingId:r.wedding_id,time:r.time,dur:r.duration_minutes,label:r.label,cat:r.category,note:r.note,
+  person:r.person_name,music:r.music_title?{title:r.music_title,mode:r.music_mode,timing:r.music_timing}:null,sortOrder:r.sort_order}
+}
+async function loadBank(){
+ const {data,error}=await sb.from('velvet_bank').select('qi,text,theme,active').eq('active',true).order('sort_order');
+ if(error||!data)return;
+ db.bank=data.map(r=>({i:r.qi,text:r.text,theme:r.theme,active:r.active}));
+}
+async function loadAdminData(){
+ const [{data:weddings},{data:people},{data:trame}]=await Promise.all([
+  sb.from('velvet_weddings').select('*').order('date'),
+  sb.from('velvet_people').select('*').order('sort_order'),
+  sb.from('velvet_trame').select('*').order('sort_order')
+ ]);
+ // Pour l'admin, on veut TOUTES les questions (actives et inactives) — pas juste le sous-ensemble public.
+ const {data:allBank}=await sb.from('velvet_bank').select('id,qi,text,theme,active').order('sort_order');
+ if(allBank)db.bank=allBank.map(r=>({i:r.qi,text:r.text,theme:r.theme,active:r.active}));
+ db.weddings=(weddings||[]).map(rowToWedding);
+ db.weddings.forEach(w=>{
+  w.people=(people||[]).filter(p=>p.wedding_id===w.id).map(rowToPerson);
+  w.trame=(trame||[]).filter(t=>t.wedding_id===w.id).map(rowToTrame);
+ });
+}
 
 let st={view:'guest-login',weddingId:'w1',adminTab:'people',personId:null,qIndex:0,pendingOnly:false,modal:null,bankOpenTheme:null,session:null};
 
@@ -303,7 +338,13 @@ const ADMIN_VIEWS=['admin-weddings','admin-wedding','admin-bank'];
 function isAdminView(v){return ADMIN_VIEWS.includes(v)}
 sb.auth.onAuthStateChange((event,session)=>{
  st.session=session;
- if(session){if(st.view==='admin-login'||st.view==='guest-login')st.view='admin-weddings'}
+ if(session){
+  if(st.view==='admin-login'||st.view==='guest-login'){
+   st.view='admin-loading';render();
+   loadAdminData().then(()=>{st.view='admin-weddings';render()});
+   return;
+  }
+ }
  else if(isAdminView(st.view))st.view='admin-login';
  render();
 });
@@ -316,7 +357,6 @@ async function signInPassword(){
  const {data,error}=await sb.auth.signInWithPassword({email,password:pwd});
  btn.disabled=false;
  if(error){status.textContent='Email ou mot de passe incorrect.';return}
- st.session=data.session;st.view='admin-weddings';render()
 }
 async function sendMagicLink(){
  const email=$('#loginEmail').value.trim();
@@ -336,7 +376,7 @@ async function verifyLoginCode(){
  btn.disabled=true;status.textContent='Vérification…';
  const {data,error}=await sb.auth.verifyOtp({email:pendingLoginEmail,token:code,type:'email'});
  if(error){btn.disabled=false;status.textContent='Code invalide ou expiré, réessayez.';return}
- st.session=data.session;pendingLoginEmail=null;st.view='admin-weddings';render()
+ pendingLoginEmail=null;
 }
 function backToEmailStep(){pendingLoginEmail=null;render()}
 async function signOutSeve(){await sb.auth.signOut()}
@@ -352,7 +392,7 @@ function $(s){return document.querySelector(s)}
 const app=()=>document.getElementById('app');
 
 function render(){
- const ink=['admin-weddings','admin-wedding','admin-bank','admin-login'].includes(st.view);
+ const ink=['admin-weddings','admin-wedding','admin-bank','admin-login','admin-loading'].includes(st.view);
  app().className='mode-'+(ink?'ink':'vellum');
  document.documentElement.style.background=ink?'#ffffff':'#fbf9f4';
  const curW=db.weddings.find(w=>w.id===st.weddingId);
@@ -362,6 +402,7 @@ function render(){
  window.scrollTo(0,0);
  let html='';
  if(st.view==='admin-login')html=viewAdminLogin();
+ else if(st.view==='admin-loading')html='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center"><p class="muted">Chargement de votre espace…</p></div>';
  else if(st.view==='admin-weddings')html=viewAdminWeddings();
  else if(st.view==='admin-wedding')html=viewAdminWedding();
  else if(st.view==='admin-bank')html=viewAdminBank();
@@ -468,19 +509,21 @@ function viewAdminBank(){
  `+shellEnd
 }
 
-function toggleBank(i){const q=db.bank.find(q=>q.i===i);q.active=!q.active;save();render()}
-function editBank(i,v){const q=db.bank.find(q=>q.i===i);q.text=v.trim()||q.text;save()}
-function deleteBankQuestion(i){
+async function toggleBank(i){const q=db.bank.find(q=>q.i===i);q.active=!q.active;render();await sb.from('velvet_bank').update({active:q.active}).eq('qi',i)}
+async function editBank(i,v){const q=db.bank.find(q=>q.i===i);q.text=v.trim()||q.text;await sb.from('velvet_bank').update({text:q.text}).eq('qi',i)}
+async function deleteBankQuestion(i){
  const q=db.bank.find(q=>q.i===i);
  if(!confirm(`Supprimer définitivement cette question ?\n\n« ${q.text} »\n\nLes réponses déjà données par des mariés à cette question ne seront plus affichées nulle part.`))return;
- db.bank=db.bank.filter(q=>q.i!==i);save();render()
+ db.bank=db.bank.filter(q=>q.i!==i);render();
+ await sb.from('velvet_bank').delete().eq('qi',i);
 }
-function createBankQuestion(){
+async function createBankQuestion(){
  const text=$('#nqText').value.trim();if(!text)return alert('Écrivez d’abord la question.');
  const theme=$('#nqTheme').value;
  const i=Math.max(-1,...db.bank.map(q=>q.i))+1;
  db.bank.push({i,text,active:true,theme});
- save();st.modal=null;render()
+ st.modal=null;render();
+ await sb.from('velvet_bank').insert({qi:i,text,theme,active:true,sort_order:i});
 }
 function autoGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px'}
 
@@ -567,22 +610,24 @@ async function copyInvite(id){
  try{await navigator.clipboard.writeText(t)}catch(e){}
  alert('Ni email ni téléphone renseigné pour cette personne — l’invitation est copiée, à coller manuellement.');
 }
-function deletePerson(id){
+async function deletePerson(id){
  const w=wedding();const p=w.people.find(x=>x.id===id);if(!p)return;
  if(!confirm(`Supprimer définitivement la fiche de ${p.name} ?\nSon code (${p.code}) ne fonctionnera plus.`))return;
- w.people=w.people.filter(x=>x.id!==id);st.modal=null;save();render()
+ w.people=w.people.filter(x=>x.id!==id);st.modal=null;render();
+ await sb.from('velvet_people').delete().eq('id',id);
 }
-function savePerson(id){
+async function savePerson(id){
  const p=wedding().people.find(x=>x.id===id);if(!p)return;
  p.name=$('#epName').value.trim()||p.name;
  if(p.role==='intervenant')p.relation=$('#epRelation').value.trim();
  p.phone=$('#epPhone').value.trim();
  p.email=$('#epEmail').value.trim();
- st.modal=null;save();render()
+ st.modal=null;render();
+ await sb.from('velvet_people').update({name:p.name,relation:p.relation||null,phone:p.phone||null,email:p.email||null}).eq('id',id);
 }
 let draggedPersonId=null;
 function dragPersonStart(id){draggedPersonId=id}
-function dropPerson(targetId){
+async function dropPerson(targetId){
  if(!draggedPersonId||draggedPersonId===targetId)return;
  const w=wedding();
  const intervenants=w.people.filter(p=>p.role==='intervenant');
@@ -593,14 +638,15 @@ function dropPerson(targetId){
  const[moved]=intervenants.splice(fromIdx,1);
  intervenants.splice(toIdx,0,moved);
  w.people=[...others,...intervenants];
- draggedPersonId=null;save();render()
+ draggedPersonId=null;render();
+ await Promise.all(intervenants.map((p,idx)=>sb.from('velvet_people').update({sort_order:idx}).eq('id',p.id)));
 }
 async function sendConstellation(){
- const w=wedding();w.constellationSent=true;w.constellationSentAt=new Date().toISOString();save();
+ const w=wedding();w.constellationSent=true;w.constellationSentAt=new Date().toISOString();render();
  const t=`Votre Constellation de couple est prête à découvrir : elle vous attend dans votre espace, avec votre code personnel.`;
  try{await navigator.clipboard.writeText(t)}catch(e){}
  alert('Constellation envoyée — le message est aussi copié, prêt à coller dans un SMS ou un email.');
- render()
+ await sb.from('velvet_weddings').update({constellation_sent:true,constellation_sent_at:w.constellationSentAt}).eq('id',w.id);
 }
 
 function tabAnswers(w){
@@ -698,8 +744,8 @@ function tabPrep(w){
   <div class="dictate-box">La dictée utilise la reconnaissance vocale de votre navigateur. Selon l’appareil, elle peut être indisponible dans cet aperçu — elle fonctionnera normalement une fois l’application installée.</div>
  </div>`
 }
-function saveNotes(v){wedding().notes=v;clearTimeout(window._nt);window._nt=setTimeout(save,400)}
-function savePreambule(v){wedding().preambule=v;clearTimeout(window._pt);window._pt=setTimeout(save,400)}
+function saveNotes(v){const w=wedding();w.notes=v;clearTimeout(window._nt);window._nt=setTimeout(()=>sb.from('velvet_weddings').update({notes:v}).eq('id',w.id),400)}
+function savePreambule(v){const w=wedding();w.preambule=v;clearTimeout(window._pt);window._pt=setTimeout(()=>sb.from('velvet_weddings').update({preambule:v}).eq('id',w.id),400)}
 async function generatePreambule(){
  const w=wedding();
  const btn=$('#genPreambuleBtn'),status=$('#preambuleStatus'),box=$('#preambuleBox');
@@ -770,16 +816,21 @@ function tabTrame(w){
   </div>
  </div>`
 }
-function moveTrame(idx,dir){const w=wedding();const j=idx+dir;if(j<0||j>=w.trame.length)return;[w.trame[idx],w.trame[j]]=[w.trame[j],w.trame[idx]];save();render()}
-function removeTrame(id){const w=wedding();w.trame=w.trame.filter(t=>t.id!==id);save();render()}
+async function moveTrame(idx,dir){
+ const w=wedding();const j=idx+dir;if(j<0||j>=w.trame.length)return;
+ [w.trame[idx],w.trame[j]]=[w.trame[j],w.trame[idx]];render();
+ await Promise.all(w.trame.map((t,i)=>sb.from('velvet_trame').update({sort_order:i}).eq('id',t.id)));
+}
+async function removeTrame(id){const w=wedding();w.trame=w.trame.filter(t=>t.id!==id);render();await sb.from('velvet_trame').delete().eq('id',id)}
 function musicIcon(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>`}
-function saveMusic(id){
+async function saveMusic(id){
  const t=wedding().trame.find(x=>x.id===id);if(!t)return;
  const title=$('#mzTitle').value.trim();
  const mode=document.querySelector('input[name="mzMode"]:checked')?.value||'live';
  const timing=document.querySelector('input[name="mzTiming"]:checked')?.value||'pendant';
  t.music=title?{title,mode,timing}:null;
- st.modal=null;save();render()
+ st.modal=null;render();
+ await sb.from('velvet_trame').update({music_title:t.music?.title||null,music_mode:t.music?.mode||null,music_timing:t.music?.timing||null}).eq('id',id);
 }
 
 /* ---------------- MODALS ---------------- */
@@ -877,7 +928,7 @@ async function setSevePassword(){
  closeModal();alert('Mot de passe enregistré — vous pouvez désormais l’utiliser pour vous connecter directement.');
 }
 function selectPalette(k){document.querySelectorAll('.palette-swatch').forEach(b=>b.classList.toggle('active',b.dataset.k===k))}
-function saveDates(){
+async function saveDates(){
  const w=wedding();
  w.themeColor=document.querySelector('.palette-swatch.active')?.dataset.k||'gold';
  w.date=$('#dWedding').value||w.date;
@@ -886,23 +937,30 @@ function saveDates(){
  w.answersReminderMsg=$('#dAnswersMsg').value.trim();
  w.speechReminderMsg=$('#dSpeechMsg').value.trim();
  w.remindersOn=document.getElementById('remindersSwitch').classList.contains('on');
- save();st.modal=null;render()
+ st.modal=null;render();
+ await sb.from('velvet_weddings').update({theme_color:w.themeColor,date:w.date,answers_deadline:w.answersDeadline||null,
+  speech_deadline:w.speechDeadline||null,answers_reminder_msg:w.answersReminderMsg,speech_reminder_msg:w.speechReminderMsg,
+  reminders_on:w.remindersOn}).eq('id',w.id);
 }
-function createWedding(){
+async function createWedding(){
  const names=$('#mNames').value.trim(),date=$('#mDate').value,place=$('#mPlace').value.trim();
  if(!names||!date)return alert('Prénoms et date sont nécessaires.');
- const w={id:uid('w'),names,date,place,people:[],trame:[],notes:'',constellationSent:false,constellationSentAt:null,answersDeadline:'',speechDeadline:'',remindersOn:true};
- db.weddings.push(w);save();st.weddingId=w.id;st.view='admin-wedding';st.adminTab='people';st.modal=null;render()
+ const w={id:crypto.randomUUID(),names,date,place,people:[],trame:[],notes:'',constellationSent:false,constellationSentAt:null,answersDeadline:'',speechDeadline:'',remindersOn:true};
+ db.weddings.push(w);st.weddingId=w.id;st.view='admin-wedding';st.adminTab='people';st.modal=null;render();
+ await sb.from('velvet_weddings').insert({id:w.id,names,date,place});
 }
-function createPerson(role){
+async function createPerson(role){
  const name=$('#pName').value.trim();if(!name)return alert('Le prénom est nécessaire.');
- const p={id:uid('p'),name,role,code:code(),answers:{},skipped:[],phone:$('#pPhone').value.trim(),email:$('#pEmail').value.trim()};
+ const p={id:crypto.randomUUID(),name,role,code:code(),answers:{},skipped:[],phone:$('#pPhone').value.trim(),email:$('#pEmail').value.trim()};
  if(role==='intervenant'){p.relation=$('#pRelation').value.trim();p.speech=''}
- wedding().people.push(p);save();st.modal=null;render()
+ const w=wedding();w.people.push(p);st.modal=null;render();
+ await sb.from('velvet_people').insert({id:p.id,wedding_id:w.id,name:p.name,role,code:p.code,phone:p.phone||null,email:p.email||null,relation:p.relation||null});
 }
-function createTrame(){
- const t={id:uid('t'),time:$('#trTime').value,dur:Number($('#trDur').value)||5,label:$('#trLabel').value.trim()||'Temps de cérémonie',cat:$('#trCat').value,note:$('#trNote').value.trim()};
- wedding().trame.push(t);wedding().trame.sort((a,b)=>a.time.localeCompare(b.time));save();st.modal=null;render()
+async function createTrame(){
+ const w=wedding();
+ const t={id:crypto.randomUUID(),time:$('#trTime').value,dur:Number($('#trDur').value)||5,label:$('#trLabel').value.trim()||'Temps de cérémonie',cat:$('#trCat').value,note:$('#trNote').value.trim()};
+ w.trame.push(t);w.trame.sort((a,b)=>a.time.localeCompare(b.time));st.modal=null;render();
+ await sb.from('velvet_trame').insert({id:t.id,wedding_id:w.id,time:t.time,duration_minutes:t.dur,label:t.label,category:t.cat,note:t.note||null,sort_order:w.trame.length});
 }
 
 /* ---------------- GUEST ---------------- */
@@ -912,16 +970,35 @@ function viewGuestLogin(){
   <h1>Bienvenue.</h1>
   <p class="lead">Entrez simplement le code personnel que Sève vous a envoyé. Il vous ramènera toujours à votre propre espace.</p>
   <input class="code-input" id="loginCode" autocomplete="one-time-code" placeholder="VOTRE CODE" onkeydown="if(event.key==='Enter')doLogin()">
-  <div><button class="btn primary" style="margin-top:8px" onclick="doLogin()">Entrer dans mon espace</button></div>
-  <button class="quit-link" style="position:static;margin-top:14px;opacity:.5" onclick="history.replaceState(null,'','?sev');st.view='admin-login';render()">Vous êtes Sève ? Connexion officiante</button>
+  <div><button class="btn primary" style="margin-top:8px" id="loginBtnGuest" onclick="doLogin()">Entrer dans mon espace</button></div>
+  <p class="muted" id="loginCodeStatus" style="margin-top:10px;font-size:12.5px;min-height:16px"></p>
+  <button class="quit-link" style="position:static;margin-top:4px;opacity:.5" onclick="history.replaceState(null,'','?sev');st.view='admin-login';render()">Vous êtes Sève ? Connexion officiante</button>
  </div>
  </div>`
 }
-function doLogin(){
+async function doLogin(){
+ const btn=$('#loginBtnGuest'),status=$('#loginCodeStatus');
  const c=$('#loginCode').value.trim().toUpperCase();
- const p=wedding().people.find(p=>p.code===c);
- if(!p)return alert('Ce code n’est pas reconnu pour ce mariage.');
- st.personId=p.id;st.pendingOnly=false;st.qIndex=activeBank()[0]?.i||0;
+ if(!c)return;
+ if(btn){btn.disabled=true}if(status)status.textContent='Vérification…';
+ const {data,error}=await sb.rpc('velvet_get_person_by_code',{p_code:c});
+ if(btn)btn.disabled=false;
+ const r=data&&data[0];
+ if(error||!r){if(status)status.textContent='Ce code n’est pas reconnu.';return}
+ st.guestCode=c;
+ const p={id:r.person_id,name:r.name,role:r.role,relation:r.relation,code:c,
+  speech:r.speech||'',vows:r.vows||'',answers:r.answers||{},skipped:r.skipped_question_ids||[]};
+ let w=db.weddings.find(x=>x.id===r.wedding_id);
+ if(w){
+  const idx=w.people.findIndex(x=>x.id===p.id);
+  if(idx>=0)w.people[idx]=p;else w.people.push(p);
+ }else{
+  w={id:r.wedding_id,names:r.wedding_names,date:r.wedding_date,place:r.wedding_place,
+   answersDeadline:r.answers_deadline,speechDeadline:r.speech_deadline,
+   constellationSent:r.constellation_sent,people:[p],trame:[]};
+  db.weddings.push(w);
+ }
+ st.weddingId=w.id;st.personId=p.id;st.pendingOnly=false;st.qIndex=activeBank()[0]?.i??0;
  st.view=p.role==='intervenant'?'speaker':'welcome';render()
 }
 function viewWelcome(){
@@ -977,11 +1054,11 @@ function viewQuestion(){
   <button class="quit-link" onclick="st.personId=null;st.view='guest-login';render()">← Quitter (tout est déjà enregistré)</button>
  </div>`
 }
+function saveAnswerRemote(qi,text){sb.rpc('velvet_save_answer',{p_code:st.guestCode,p_qi:qi,p_answer:text})}
 function autosaveAnswer(v){
  const p=person();p.answers=p.answers||{};
  clearTimeout(window._at);window._at=setTimeout(()=>{
-  if(v.trim()){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex)}else{delete p.answers[st.qIndex]}
-  save();
+  if(v.trim()){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex);saveAnswerRemote(st.qIndex,v)}else{delete p.answers[st.qIndex]}
   const bar=document.querySelector('.q-bar span');if(bar)bar.style.width=pct(p)+'%';
   const top=document.getElementById('pctText');if(top)top.textContent=pct(p)+'%';
   const box=document.getElementById('autosaveBox'),txt=document.getElementById('autosaveText');
@@ -991,12 +1068,12 @@ function autosaveAnswer(v){
 }
 function nextQuestion(){
  const v=$('#ans').value.trim();const p=person();p.answers=p.answers||{};
- if(v){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex)}
- save();chimeNext();advance()
+ if(v){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex);saveAnswerRemote(st.qIndex,v)}
+ chimeNext();advance()
 }
 function goBack(){
  const ta=$('#ans');
- if(ta){const v=ta.value.trim();const p=person();p.answers=p.answers||{};if(v){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex)}save()}
+ if(ta){const v=ta.value.trim();const p=person();p.answers=p.answers||{};if(v){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex);saveAnswerRemote(st.qIndex,v)}}
  chimeSoft();
  const q=db.bank.find(q=>q.i===st.qIndex);
  const themeAll=activeBank().filter(x=>x.theme===q.theme).map(x=>x.i);
@@ -1068,7 +1145,7 @@ function viewSpeaker(){
  <button class="quit-link" onclick="st.personId=null;st.view='guest-login';render()">← Quitter</button>
  </div>`
 }
-function saveSpeech(v){const p=person();p.speech=v;clearTimeout(window._st);window._st=setTimeout(()=>{save();const w=v.trim().split(/\s+/).filter(Boolean).length;const el=$('#wc');if(el)el.textContent=`${w} mots · env. ${Math.max(1,Math.round(w/140))} min`},350)}
+function saveSpeech(v){const p=person();p.speech=v;clearTimeout(window._st);window._st=setTimeout(()=>{sb.rpc('velvet_save_speech',{p_code:st.guestCode,p_text:v});const w=v.trim().split(/\s+/).filter(Boolean).length;const el=$('#wc');if(el)el.textContent=`${w} mots · env. ${Math.max(1,Math.round(w/140))} min`},350)}
 
 function viewVows(){
  const p=person(),words=(p.vows||'').trim().split(/\s+/).filter(Boolean).length;
@@ -1082,7 +1159,7 @@ function viewVows(){
  <button class="quit-link" onclick="st.view='welcome';render()">← Retour</button>
  </div>`
 }
-function saveVows(v){const p=person();p.vows=v;clearTimeout(window._vt);window._vt=setTimeout(()=>{save();const w=v.trim().split(/\s+/).filter(Boolean).length;const el=$('#vwc');if(el)el.textContent=`${w} mots · env. ${Math.max(1,Math.round(w/140))} min`},350)}
+function saveVows(v){const p=person();p.vows=v;clearTimeout(window._vt);window._vt=setTimeout(()=>{sb.rpc('velvet_save_vows',{p_code:st.guestCode,p_text:v});const w=v.trim().split(/\s+/).filter(Boolean).length;const el=$('#vwc');if(el)el.textContent=`${w} mots · env. ${Math.max(1,Math.round(w/140))} min`},350)}
 
 /* subtle decorative starfield on question screen */
 const reduceMotion=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1145,10 +1222,16 @@ function drawVeil(){
 
 (async()=>{
  if(new URLSearchParams(location.search).has('sev'))st.view='admin-weddings';
+ await loadBank();
  const {data:{session}}=await sb.auth.getSession();
  st.session=session;
- if(session && st.view==='guest-login')st.view='admin-weddings';
- if(!session && isAdminView(st.view))st.view='admin-login';
+ if(session){
+  const wantsAdmin=st.view==='guest-login'||isAdminView(st.view);
+  st.view='admin-loading';render();
+  await loadAdminData();
+  st.view=wantsAdmin?'admin-weddings':st.view;
+ }
+ else if(isAdminView(st.view))st.view='admin-login';
  render();
 })();
 </script>
