@@ -307,6 +307,7 @@ sb.auth.onAuthStateChange((event,session)=>{
  else if(isAdminView(st.view))st.view='admin-login';
  render();
 });
+let pendingLoginEmail=null;
 async function sendMagicLink(){
  const email=$('#loginEmail').value.trim();
  const status=$('#loginStatus'),btn=$('#loginBtn');
@@ -314,8 +315,20 @@ async function sendMagicLink(){
  btn.disabled=true;status.textContent='Envoi en cours…';
  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.href}});
  btn.disabled=false;
- status.textContent=error?'Une erreur est survenue, réessayez.':'Lien envoyé — vérifiez vos emails (et les spams).';
+ if(error){status.textContent='Une erreur est survenue, réessayez.';return}
+ pendingLoginEmail=email;
+ render();
 }
+async function verifyLoginCode(){
+ const code=$('#loginOtp').value.trim();
+ const status=$('#otpStatus'),btn=$('#otpBtn');
+ if(!code){status.textContent='Entrez le code reçu par email.';return}
+ btn.disabled=true;status.textContent='Vérification…';
+ const {data,error}=await sb.auth.verifyOtp({email:pendingLoginEmail,token:code,type:'email'});
+ if(error){btn.disabled=false;status.textContent='Code invalide ou expiré, réessayez.';return}
+ st.session=data.session;pendingLoginEmail=null;st.view='admin-weddings';render()
+}
+function backToEmailStep(){pendingLoginEmail=null;render()}
 async function signOutSeve(){await sb.auth.signOut()}
 
 function wedding(id){return db.weddings.find(w=>w.id===(id||st.weddingId))}
@@ -355,17 +368,29 @@ function render(){
 }
 
 function viewAdminLogin(){
+ const step2=!!pendingLoginEmail;
  return `<div class="view-enter" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
   <div style="width:100%;max-width:400px">
    <div class="mark" style="justify-content:center;margin-bottom:26px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5" r="1.6" fill="var(--gold)"/><circle cx="19" cy="12" r="1.2" fill="var(--gold)"/><circle cx="12" cy="19" r="1.6" fill="var(--gold)"/><circle cx="5" cy="12" r="1.2" fill="var(--gold)"/><path d="M12 5 19 12 12 19 5 12Z" stroke="var(--gold)" stroke-width="0.8" opacity=".6"/></svg>Velvet Ceremony</div>
    <div class="card" style="text-align:center">
+    ${step2?`
+    <h1 style="font-size:24px;font-weight:500">Vérification</h1>
+    <p class="muted" style="margin-top:8px;font-size:13.5px">Entrez le code à 6 chiffres reçu par email à ${esc(pendingLoginEmail)}.</p>
+    <div class="field" style="margin-top:20px;text-align:left">
+     <input id="loginOtp" class="code-input" style="font-size:22px" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" onkeydown="if(event.key==='Enter')verifyLoginCode()">
+    </div>
+    <button class="btn primary" style="width:100%" id="otpBtn" onclick="verifyLoginCode()">Valider le code</button>
+    <p class="muted" id="otpStatus" style="margin-top:14px;font-size:12.5px;min-height:16px"></p>
+    <button class="btn ghost small" style="margin-top:4px" onclick="backToEmailStep()">← Changer d’email</button>
+    `:`
     <h1 style="font-size:24px;font-weight:500">Espace de Sève</h1>
-    <p class="muted" style="margin-top:8px;font-size:13.5px">Entrez votre email, vous recevrez un lien pour vous connecter — pas de mot de passe à retenir.</p>
+    <p class="muted" style="margin-top:8px;font-size:13.5px">Entrez votre email, vous recevrez un code à 6 chiffres à recopier ici — pas de mot de passe à retenir.</p>
     <div class="field" style="margin-top:20px;text-align:left">
      <input id="loginEmail" type="email" placeholder="vous@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')sendMagicLink()">
     </div>
-    <button class="btn primary" style="width:100%" id="loginBtn" onclick="sendMagicLink()">Recevoir le lien de connexion</button>
+    <button class="btn primary" style="width:100%" id="loginBtn" onclick="sendMagicLink()">Recevoir le code de connexion</button>
     <p class="muted" id="loginStatus" style="margin-top:14px;font-size:12.5px;min-height:16px"></p>
+    `}
    </div>
   </div>
  </div>`
@@ -380,7 +405,7 @@ function shellStart(activeNav){
     <a class="${activeNav==='w'?'active':''}" onclick="st.view='admin-weddings';render()">Mariages</a>
     <a class="${activeNav==='b'?'active':''}" onclick="st.view='admin-bank';render()">Banque de questions</a>
    </nav>
-   <div class="foot">${st.session?esc(st.session.user.email):'Mon espace privé.'}<br>Officiante de cérémonies laïques.<br><button class="btn ghost small" style="margin-top:10px;padding-left:0" onclick="resetDemo()">↺ Réinitialiser la démo</button><br><button class="btn ghost small" style="margin-top:4px;padding-left:0" onclick="signOutSeve()">Se déconnecter</button></div>
+   <div class="foot">${st.session?esc(st.session.user.email):'Mon espace privé.'}<br>Officiante de cérémonies laïques.<br><button class="btn ghost small" style="margin-top:10px;padding-left:0" onclick="resetDemo()">↺ Réinitialiser la démo</button><br><button class="btn ghost small" style="margin-top:4px;padding-left:0" onclick="openModal('setPassword')">Définir un mot de passe</button><br><button class="btn ghost small" style="margin-top:4px;padding-left:0" onclick="signOutSeve()">Se déconnecter</button></div>
   </aside>
   <main class="admin-main">`
 }
@@ -818,7 +843,24 @@ function viewModal(){
   <div class="dictate-box">Ces rappels sont pour l'instant une prévisualisation : pour qu'ils partent vraiment par email ou SMS, il faudra brancher un service d'envoi à la mise en production.</div>
   <div class="row" style="margin-top:14px"><button class="btn primary" onclick="saveDates()">Enregistrer</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
  </div></div>`}
+ if(m.type==='setPassword')return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Définir un mot de passe</h3>
+  <p class="muted" style="font-size:13px;margin-top:-8px;margin-bottom:14px">Vous pourrez ensuite vous connecter directement avec votre email et ce mot de passe, sans repasser par un email à chaque fois.</p>
+  <div class="field"><label>Nouveau mot de passe</label><input id="newPwd" type="password" autocomplete="new-password" placeholder="Au moins 8 caractères"></div>
+  <div class="field"><label>Confirmez le mot de passe</label><input id="newPwd2" type="password" autocomplete="new-password"></div>
+  <p class="muted" id="pwdStatus" style="font-size:12.5px;min-height:16px"></p>
+  <div class="row" style="margin-top:10px"><button class="btn primary" id="pwdBtn" onclick="setSevePassword()">Enregistrer</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+ </div></div>`;
  return '';
+}
+async function setSevePassword(){
+ const p1=$('#newPwd').value,p2=$('#newPwd2').value,status=$('#pwdStatus'),btn=$('#pwdBtn');
+ if(p1.length<8){status.textContent='8 caractères minimum.';return}
+ if(p1!==p2){status.textContent='Les deux mots de passe ne correspondent pas.';return}
+ btn.disabled=true;status.textContent='Enregistrement…';
+ const {error}=await sb.auth.updateUser({password:p1});
+ btn.disabled=false;
+ if(error){status.textContent='Une erreur est survenue, réessayez.';return}
+ closeModal();alert('Mot de passe enregistré — vous pouvez désormais l’utiliser pour vous connecter directement.');
 }
 function selectPalette(k){document.querySelectorAll('.palette-swatch').forEach(b=>b.classList.toggle('active',b.dataset.k===k))}
 function saveDates(){
