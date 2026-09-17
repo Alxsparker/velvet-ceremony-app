@@ -9,17 +9,16 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST endpoint
+      - name: Ping Supabase auth health endpoint
         env:
           SUPABASE_URL: https://pmgqpdjzptryegjfhsry.supabase.co
-          SUPABASE_ANON_KEY: sb_publishable_q_mAxfjz_yo2WxLBNbAykw_hlX653R6
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -e
           echo "Pinging $SUPABASE_URL ..."
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            "$SUPABASE_URL/rest/v1/")
+            "$SUPABASE_URL/auth/v1/health")
           echo "HTTP status: $STATUS"
           if [ "$STATUS" -ge 500 ] || [ "$STATUS" = "000" ]; then
             echo "Unhealthy response, failing job."
