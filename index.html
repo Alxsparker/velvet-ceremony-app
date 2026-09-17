@@ -308,6 +308,16 @@ sb.auth.onAuthStateChange((event,session)=>{
  render();
 });
 let pendingLoginEmail=null;
+async function signInPassword(){
+ const email=$('#loginEmail').value.trim(),pwd=$('#loginPwd').value;
+ const status=$('#loginStatus'),btn=$('#pwdLoginBtn');
+ if(!email||!pwd){status.textContent='Entrez votre email et votre mot de passe.';return}
+ btn.disabled=true;status.textContent='Connexion…';
+ const {data,error}=await sb.auth.signInWithPassword({email,password:pwd});
+ btn.disabled=false;
+ if(error){status.textContent='Email ou mot de passe incorrect.';return}
+ st.session=data.session;st.view='admin-weddings';render()
+}
 async function sendMagicLink(){
  const email=$('#loginEmail').value.trim();
  const status=$('#loginStatus'),btn=$('#loginBtn');
@@ -384,12 +394,16 @@ function viewAdminLogin(){
     <button class="btn ghost small" style="margin-top:4px" onclick="backToEmailStep()">← Changer d’email</button>
     `:`
     <h1 style="font-size:24px;font-weight:500">Espace de Sève</h1>
-    <p class="muted" style="margin-top:8px;font-size:13.5px">Entrez votre email, vous recevrez un code à 6 chiffres à recopier ici — pas de mot de passe à retenir.</p>
+    <p class="muted" style="margin-top:8px;font-size:13.5px">Connectez-vous avec votre email et votre mot de passe.</p>
     <div class="field" style="margin-top:20px;text-align:left">
-     <input id="loginEmail" type="email" placeholder="vous@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')sendMagicLink()">
+     <input id="loginEmail" type="email" placeholder="vous@email.com" autocomplete="email">
     </div>
-    <button class="btn primary" style="width:100%" id="loginBtn" onclick="sendMagicLink()">Recevoir le code de connexion</button>
+    <div class="field" style="text-align:left">
+     <input id="loginPwd" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')signInPassword()">
+    </div>
+    <button class="btn primary" style="width:100%" id="pwdLoginBtn" onclick="signInPassword()">Se connecter</button>
     <p class="muted" id="loginStatus" style="margin-top:14px;font-size:12.5px;min-height:16px"></p>
+    <button class="btn ghost small" style="margin-top:10px" onclick="sendMagicLink()">Pas de mot de passe ? Recevoir un code par email</button>
     `}
    </div>
   </div>
