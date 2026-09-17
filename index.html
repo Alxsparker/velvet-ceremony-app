@@ -294,7 +294,7 @@ let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed();
 function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 function resetDemo(){db=seed();save();st.weddingId='w1';st.view='admin-weddings';render()}
 
-let st={view:'admin-weddings',weddingId:'w1',adminTab:'people',personId:null,qIndex:0,pendingOnly:false,modal:null,bankOpenTheme:null,session:null};
+let st={view:'guest-login',weddingId:'w1',adminTab:'people',personId:null,qIndex:0,pendingOnly:false,modal:null,bankOpenTheme:null,session:null};
 
 const SUPABASE_URL='https://pmgqpdjzptryegjfhsry.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtZ3FwZGp6cHRyeWVnamZoc3J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMzg2OTUsImV4cCI6MjA5ODgxNDY5NX0.efAsSxWcpzq6oWX3KfgV-6xcjxppX8Z_3WWi8kmBqqI';
@@ -851,15 +851,13 @@ function createTrame(){
 
 /* ---------------- GUEST ---------------- */
 function viewGuestLogin(){
- const w=wedding();
  return `<div class="guest-shell view-enter"><div class="panel">
-  <div class="eyebrow">${esc(w.names)} · ${new Date(w.date+'T12:00').toLocaleDateString('fr-FR')}</div>
+  <div class="eyebrow">Velvet Ceremony</div>
   <h1>Bienvenue.</h1>
-  <p class="lead">Entrez simplement le code personnel que je vous ai envoyé. Il vous ramènera toujours à votre propre espace.</p>
+  <p class="lead">Entrez simplement le code personnel que Sève vous a envoyé. Il vous ramènera toujours à votre propre espace.</p>
   <input class="code-input" id="loginCode" autocomplete="one-time-code" placeholder="VOTRE CODE" onkeydown="if(event.key==='Enter')doLogin()">
   <div><button class="btn primary" style="margin-top:8px" onclick="doLogin()">Entrer dans mon espace</button></div>
  </div>
- <button class="quit-link" onclick="st.view='admin-wedding';render()">← Retour à mon espace</button>
  </div>`
 }
 function doLogin(){
@@ -1089,8 +1087,10 @@ function drawVeil(){
 }
 
 (async()=>{
+ if(new URLSearchParams(location.search).has('sev'))st.view='admin-weddings';
  const {data:{session}}=await sb.auth.getSession();
  st.session=session;
+ if(session && st.view==='guest-login')st.view='admin-weddings';
  if(!session && isAdminView(st.view))st.view='admin-login';
  render();
 })();
