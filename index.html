@@ -1,0 +1,1097 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Velvet Ceremony</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --ink-bg:#ffffff; --ink-surface:#faf8f3; --ink-raised:#ffffff; --ink-line:#e6ded0;
+  --ink-text:#26211a; --ink-muted:#8c8272; --ink-gold:#a17c3c; --ink-gold-strong:#7c5c28;
+  --vel-bg:#fbf9f4; --vel-surface:#ffffff; --vel-raised:#ffffff; --vel-line:#e9e2d1;
+  --vel-text:#26211a; --vel-muted:#82786a; --vel-gold:#93672c; --vel-gold-strong:#7a5522;
+  --ok:#5f8f6a; --ok-bg:#20301e; --pending:#c17a3d; --pending-bg:#2c2013; --danger:#b2504a;
+  --sage:#8a9a7e; --sage-strong:#57684c; --sage-bg:#f2f5ed; --sage-line:#d3ddc7;
+  --r-s:10px; --r-m:16px; --r-l:26px; --r-xl:34px;
+  --f-display:'Fraunces',Georgia,serif; --f-body:'Archivo',-apple-system,BlinkMacSystemFont,sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,monospace;
+  background:var(--ink-bg);
+}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;background:var(--ink-bg);max-width:100vw;overflow-x:hidden}
+body{font-family:var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+p{margin:0}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:#d9c8a3;color:#26211a}
+#app{min-height:100vh;background:var(--bg);color:var(--text);max-width:100vw;overflow-x:hidden}
+#app.mode-ink{--bg:var(--ink-bg);--surface:var(--ink-surface);--raised:var(--ink-raised);--line:var(--ink-line);--text:var(--ink-text);--muted:var(--ink-muted);--gold:var(--ink-gold);--gold-strong:var(--ink-gold-strong);--onGold:#fffaf0}
+#app.mode-vellum{--bg:var(--vel-bg);--surface:var(--vel-surface);--raised:var(--vel-raised);--line:var(--vel-line);--text:var(--vel-text);--muted:var(--vel-muted);--gold:var(--vel-gold);--gold-strong:var(--vel-gold-strong);--onGold:#fff8ec}
+
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-strong);font-weight:600}
+.muted{color:var(--muted)}
+a{color:inherit}
+input,textarea,select{background:var(--raised);border:1px solid var(--line);border-radius:var(--r-s);padding:11px 13px;width:100%}
+input:focus-visible,textarea:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+textarea{resize:vertical}
+.btn{border-radius:999px;padding:11px 20px;border:1px solid var(--line);background:var(--raised);font-weight:600;font-size:14px;transition:transform .15s ease,background .2s}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--gold);color:var(--onGold);border-color:var(--gold)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.small{padding:7px 14px;font-size:12.5px}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:10px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.tag.pending{color:var(--pending);border-color:var(--pending)}
+.tag.info{color:#5b7a99;border-color:#5b7a99}
+.hairline{height:1px;background:var(--line);border:0;margin:0}
+.code-chip{font-family:var(--f-mono);font-weight:600;letter-spacing:.1em;border:1px solid var(--gold);color:var(--gold-strong);padding:6px 14px;border-radius:999px;background:color-mix(in srgb,var(--gold) 10%,transparent)}
+.code-chip.alt{border-color:var(--sage);color:var(--sage-strong);background:var(--sage-bg)}
+.card-sage{background:var(--sage-bg);border-color:var(--sage-line)}
+.person-row.intervenant{background:var(--raised);border-color:var(--sage-line);border-width:2px}
+.card-sage .person-row.intervenant{background:#fff}
+.view-enter{animation:enter .5s cubic-bezier(.2,.7,.3,1)}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes qenter{from{opacity:0;transform:translateY(38px) scale(.98)}to{opacity:1;transform:none}}
+.q-main>*{animation:qenter .8s cubic-bezier(.16,1,.3,1) both}
+.q-main>*:nth-child(1){animation-delay:.03s}
+.q-main>*:nth-child(2){animation-delay:.13s}
+.q-main>*:nth-child(3){animation-delay:.26s}
+.q-main>*:nth-child(4){animation-delay:.4s}
+.btn{transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .2s,box-shadow .2s,border-color .2s}
+.btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 10px 24px color-mix(in srgb,var(--gold) 25%,transparent)}
+.btn:active{transform:scale(.94)}
+.btn.primary:hover{box-shadow:0 12px 28px color-mix(in srgb,var(--gold) 45%,transparent)}
+.q-main textarea{transition:border-color .25s,box-shadow .25s,transform .25s}
+.q-main textarea:focus{border-color:var(--gold);box-shadow:0 0 0 6px color-mix(in srgb,var(--gold) 22%,transparent);transform:translateY(-2px)}
+.autosave{transition:color .3s}
+.autosave i{transition:transform .3s ease,background .3s ease;width:8px;height:8px}
+.autosave.pulse{color:var(--gold-strong)}
+.autosave.pulse i{animation:savepulse .9s cubic-bezier(.34,1.56,.64,1);background:var(--gold)}
+@keyframes savepulse{0%{transform:scale(1);box-shadow:0 0 0 0 color-mix(in srgb,var(--gold) 50%,transparent)}35%{transform:scale(2.8);box-shadow:0 0 0 8px color-mix(in srgb,var(--gold) 0%,transparent)}100%{transform:scale(1)}}
+.q-bar span{position:relative}
+.q-bar span:after{content:"";position:absolute;right:-3px;top:50%;translate:0 -50%;width:8px;height:8px;border-radius:50%;background:var(--gold-strong);box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 30%,transparent)}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* ---------- Admin (ink world) ---------- */
+.admin-shell{display:grid;grid-template-columns:252px 1fr;min-height:100vh}
+.rail{background:var(--surface);border-right:1px solid var(--line);padding:28px 22px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.mark{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-style:italic;font-size:20px}
+.mark svg{flex:none}
+.rail nav{margin-top:38px;display:flex;flex-direction:column;gap:4px}
+.rail nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer}
+.rail nav a:hover{color:var(--text)}
+.rail nav a.active{background:var(--raised);color:var(--gold-strong)}
+.rail .foot{margin-top:auto;font-size:12px;color:var(--muted);line-height:1.5}
+.admin-main{padding:52px 60px 90px;max-width:1180px}
+.header-row{align-items:flex-end}
+.admin-header h1{font-size:clamp(32px,4vw,48px);font-weight:500;letter-spacing:-.02em}
+.admin-header p{color:var(--muted);margin-top:8px;max-width:560px;line-height:1.55}
+.wedding-row{display:grid;grid-template-columns:1.4fr 1fr auto;gap:18px;align-items:center;padding:20px 22px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);margin-top:12px;transition:border-color .2s}
+.wedding-row:hover{border-color:var(--gold)}
+.wedding-row h3{font-size:20px;font-weight:500}
+.wedding-row .meta{color:var(--muted);font-size:13px;margin-top:4px}
+.mini-bars{display:flex;gap:14px}
+.dates-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:22px 0 -6px}
+.date-pill{border:1px solid var(--line);border-radius:var(--r-s);padding:8px 14px;font-size:12.5px;display:flex;flex-direction:column;gap:2px;background:var(--surface)}
+.date-pill .lbl{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+.deadline-note{border:1px solid var(--vel-line);background:var(--vel-raised);border-radius:999px;padding:8px 16px;font-size:12.5px;color:var(--vel-muted);display:inline-flex;margin-top:14px}
+.mini-bar{display:flex;flex-direction:column;gap:5px;min-width:86px}
+.mini-bar .track{height:4px;background:var(--line);border-radius:99px;overflow:hidden}
+.mini-bar .fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-strong))}
+.mini-bar .lbl{font-size:11px;color:var(--muted)}
+.tabs{display:flex;gap:2px;margin:30px 0 26px;border-bottom:1px solid var(--line);overflow-x:auto;touch-action:pan-x;-webkit-overflow-scrolling:touch;position:sticky;top:0;background:var(--bg);z-index:6}
+.tabs button{background:none;border:none;padding:12px 18px;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:0;white-space:nowrap;flex:none}
+.tabs button.active{color:var(--gold-strong);border-color:var(--gold)}
+.card{border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);padding:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.trame-grid{grid-template-columns:1.3fr 1fr;align-items:flex-start}
+.export-doc{overflow-x:auto}
+.people-section{margin-top:18px}
+.person-wrap{position:relative;width:100%;max-width:190px;margin:16px auto 0}
+.person-ring{position:relative;width:100%;height:0;padding-top:100%;border-radius:50%}
+.person-row{position:absolute;inset:5px;border-radius:50%;background:var(--raised);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:5px;padding:14px;overflow:hidden}
+.person-row.intervenant{cursor:grab}
+.person-row .name{font-weight:700;font-size:19px;font-family:var(--f-display)}
+.contact-row{display:flex;gap:6px}
+.contact-ic{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
+.contact-ic:hover{color:var(--gold-strong);border-color:var(--gold)}
+.person-edit{position:absolute;top:2px;right:2px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:12px;line-height:1;cursor:pointer}
+.person-edit:hover{color:var(--gold-strong);border-color:var(--gold)}
+.drag-handle{position:absolute;bottom:8px;left:50%;translate:-50% 0;font-size:13px;color:var(--sage-strong);cursor:grab;letter-spacing:.1em}
+.person-rect{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;border:1px solid var(--sage-line);border-radius:16px;background:var(--sage-bg);cursor:grab}
+.person-rect .pr-info{min-width:110px}
+.person-rect .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.drag-handle-rect{color:var(--sage-strong);font-size:15px;letter-spacing:.05em;flex:none;cursor:grab}
+.person-edit-rect{margin-left:auto;width:26px;height:26px;border-radius:50%;border:1px solid var(--sage-line);background:#fff;color:var(--muted);font-size:12px;cursor:pointer;flex:none}
+.person-edit-rect:hover{color:var(--gold-strong);border-color:var(--gold)}
+.people-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;justify-items:center}
+.palette-swatch{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:0 0 0 1px var(--line) inset}
+.palette-swatch.active{border-color:var(--text)}
+.progress-pill{position:relative;width:64px;height:64px}
+.progress-pill svg{transform:rotate(-90deg)}
+.progress-pill .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:13px;font-weight:600}
+.overlay{position:fixed;inset:0;background:#0a0b12aa;backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:80;padding:20px}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:30px;width:min(440px,100%);box-shadow:0 40px 90px #0009}
+.modal h3{font-size:22px;margin-bottom:18px;font-weight:500}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.field{margin-bottom:14px}
+.bank-theme{margin-top:26px}
+.bank-theme > .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.bank-theme h4{font-size:15px;font-weight:600;font-family:var(--f-body)}
+.bank-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding:10px 4px;border-bottom:1px solid var(--line)}
+.bank-item textarea{min-height:40px;background:transparent;border:1px solid transparent;padding:4px 6px}
+.bank-item textarea:hover,.bank-item textarea:focus{background:var(--raised);border-color:var(--line)}
+.bank-item.inactive textarea{color:var(--muted);text-decoration:line-through}
+.switch{width:38px;height:22px;border-radius:99px;border:1px solid var(--line);background:var(--raised);position:relative;flex:none}
+.switch i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:.2s}
+.switch.on{background:color-mix(in srgb,var(--gold) 25%,var(--raised));border-color:var(--gold)}
+.switch.on i{left:18px;background:var(--gold-strong)}
+.trame-row{display:grid;grid-template-columns:74px 1fr auto auto;gap:14px;align-items:center;padding:13px 4px;border-bottom:1px solid var(--line)}
+.trame-row .time{font-family:var(--f-mono);font-size:13px;color:var(--gold-strong)}
+.trame-row .lbl{font-weight:600;font-size:14.5px}
+.trame-row .sub{font-size:12px;color:var(--muted)}
+.export-doc{background:var(--vel-surface);color:var(--vel-text);border-radius:var(--r-m);padding:38px;font-family:var(--f-body)}
+.export-doc h2{font-family:var(--f-display);font-weight:500;font-size:26px;color:var(--vel-text)}
+.export-row{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:14px;row-gap:2px;padding:11px 0;border-bottom:1px solid var(--vel-line);font-size:13.5px}
+.export-row .t{flex:none}
+.export-row .lbl{flex:2 1 180px;min-width:0}
+.export-row .note{flex:1 1 140px;min-width:0}
+.export-row .t{font-family:var(--f-mono);color:var(--vel-gold)}
+.dictate-box{border:1px dashed var(--line);border-radius:var(--r-m);padding:18px;margin-top:14px;font-size:13px;color:var(--muted)}
+.mic{width:40px;height:40px;border-radius:50%;border:1px solid var(--gold);background:transparent;display:flex;align-items:center;justify-content:center;flex:none}
+.mic.live{background:var(--danger);border-color:var(--danger);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 10px #b2504a22}}
+
+/* ---------- Guest (vellum world) ---------- */
+.guest-shell{min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.guest-shell:before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(circle at 20% 0%,#fffdf7,transparent 55%),radial-gradient(circle at 85% 90%,#fbf0d8,transparent 50%)}
+.constellation-veil{position:absolute;inset:0;z-index:0;opacity:.9;pointer-events:none}
+.panel{position:relative;z-index:1;max-width:620px;margin:auto;padding:56px 20px;text-align:center}
+.panel .spark{font-size:30px;color:var(--gold)}
+.panel h1{font-size:clamp(32px,5.4vw,54px);font-weight:500;letter-spacing:-.02em;margin:14px 0 16px}
+.lead{font-size:17px;line-height:1.65;color:var(--muted);max-width:480px;margin:0 auto}
+.theme-toc{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:28px}
+.theme-chip{border:1px solid var(--vel-line);background:var(--vel-raised);border-radius:999px;padding:9px 16px;font-size:13px;display:flex;align-items:center;gap:8px;transition:transform .15s ease,border-color .2s}
+.theme-chip:hover{border-color:var(--vel-gold);transform:translateY(-2px)}
+.theme-chip:active{transform:scale(.96)}
+.theme-chip i{font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--vel-gold);background:color-mix(in srgb,var(--vel-gold) 12%,transparent);border-radius:99px;padding:1px 7px}
+.code-input{font-family:var(--f-mono);font-size:24px;text-align:center;letter-spacing:.22em;max-width:300px;margin:26px auto 6px;padding:16px}
+.quit-link{position:fixed;bottom:18px;left:18px;font-size:12px;color:var(--muted);z-index:5;background:none;border:none}
+.q-stage{min-height:100vh;position:relative;padding:26px 20px 40px;display:flex;flex-direction:column}
+.q-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;font-size:13px;position:relative;z-index:2}
+.q-top .r{text-align:right;font-family:var(--f-mono)}
+.q-bar{height:3px;background:var(--vel-line);border-radius:99px;margin:18px 0 0;position:relative;z-index:2}
+.q-bar,.q-bar span{overflow:visible}
+.q-bar>span{display:block;border-radius:99px 0 0 99px}
+.q-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-strong));transition:width .5s ease}
+.q-main{max-width:680px;margin:7vh auto auto;text-align:center;position:relative;z-index:1}
+.q-main h1{font-size:clamp(28px,4.4vw,46px);line-height:1.15}
+.q-main textarea{font:20px/1.6 var(--f-display);margin:26px 0;min-height:180px;padding:20px;background:var(--vel-raised)}
+.q-actions{display:flex;justify-content:space-between;gap:12px}
+.autosave{position:fixed;bottom:20px;right:20px;font-size:11.5px;color:var(--muted);z-index:5;display:flex;gap:6px;align-items:center}
+.autosave i{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.bigpct{font-family:var(--f-display);font-size:76px}
+.pending-list button{width:100%;text-align:left;margin-top:8px;font-size:13.5px}
+.speaker-textarea{min-height:400px;font:18px/1.7 var(--f-display);padding:26px}
+
+/* constellation view (printed on vellum) */
+.const-wrap{background:var(--vel-surface);border-radius:var(--r-l);padding:34px;color:var(--vel-text)}
+.const-wrap svg text{font-family:var(--f-body);fill:var(--vel-text)}
+.const-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:22px}
+.const-card{border:1px solid var(--vel-line);border-radius:var(--r-m);padding:16px;background:var(--vel-raised)}
+.const-card .who{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--vel-gold);font-weight:700}
+.const-card p{font-family:var(--f-display);font-style:italic;font-size:15.5px;line-height:1.5;margin-top:8px}
+.const-words{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.const-words span{font-family:var(--f-display);color:var(--vel-gold);font-style:italic}
+
+@media(max-width:880px){
+ .admin-shell{grid-template-columns:1fr}
+ .rail{position:relative;height:auto;flex-direction:row;align-items:center;padding:16px 18px}
+ .rail nav{margin-top:0;flex-direction:row}
+ .rail .foot{display:none}
+ .admin-main{padding:28px 20px}
+ .grid2{grid-template-columns:1fr}
+ .wedding-row{grid-template-columns:1fr}
+ .people-grid{gap:8px}
+ .person-row{padding:12px;gap:8px}
+ .header-row{flex-direction:column;align-items:flex-start!important;gap:14px}
+}
+</style>
+
+<div id="app"></div>
+
+<script>
+const QUESTIONS=["Comment vous êtes-vous rencontrés ? Qui vous a présentés l’un à l’autre ?","Quel est le souvenir le plus marquant de votre rencontre ?","Quelle a été la première personne au courant pour votre couple ? N’hésitez pas à détailler...","Depuis combien de temps êtes-vous ensemble ? Précisez la date (l’année ou pas 😉) !","Souhaitez-vous que ce soit mentionné durant la cérémonie ?","Quel est votre métier ? Quel est le métier de vos rêves ?","Avez-vous des passions ? (communes ou pas)","Quels sont vos origines ? Avez-vous une religion différente de celle de votre moitié ?","Où habitez-vous, dans quelle région ? Êtes-vous originaire de cette région ?","Avez-vous des frères et (ou) sœurs ? Vous pouvez développer et me raconter...","Avez-vous des enfants ? Prénom, âge...","Avez-vous des animaux de compagnie ?","Souhaitez-vous m’informer de quelque chose en particulier pour m’aider dans la rédaction de votre cérémonie ?","Que souhaitez-vous dire sur votre relation, y a-t-il quelque chose qui ne doit pas être divulgué ?","Souhaitez-vous que l’on glisse un petit mot pour les personnes qui ne sont plus là ? Si oui, quel était votre lien ?","Qui souhaiteriez-vous voir intervenir durant la cérémonie (pour un discours, un petit mot, un poème...) ? Coordonnées et lien avec vous.","Souhaitez-vous un rituel ?","Pourquoi une cérémonie laïque ? Et qu’attendez-vous de l’atmosphère de la cérémonie le jour J ?","Définissez-moi votre moitié, son tempérament... Et toutes informations essentielles.","Quelle est votre plus grande qualité ? Quel est votre plus gros défaut ? (Il peut ne pas y avoir de défauts 😇 !!!)","Qu’attendez-vous de la vie ?","Quelles sont vos points communs ou vos différences qui, du coup, vous rapprochent ou vous complètent ?","Quelle est pour vous la chose la plus importante dans votre vie de couple ?","Quels sont vos projets communs ?","Quel est votre plus beau souvenir en commun ?","Quel est votre plus grand rêve ?","Où vous voyez-vous dans 5 ou 10 ans ?","Quelles seraient vos vacances idéales ? Où souhaiteriez-vous partir ?","Quel est votre style musical ? Avez-vous une chanson préférée ? Un chanteur, une chanteuse ?","Quel est votre film préféré ?","Quel est votre péché mignon ?","Si tu étais un animal ? Tu serais... Parce que...","Si tu étais une fleur ? Tu serais... Parce que...","Si tu étais un pays ? Tu serais... Parce que...","Si tu étais une saison ? Tu serais... Parce que...","Si tu étais un film ? Tu serais... Parce que...","Si tu étais une chanson ? Tu serais... Parce que...","Si tu étais un jour de la semaine ? Tu serais... Parce que...","Si tu étais un moment de la journée ? Tu serais... Parce que...","Si tu étais une couleur ? Tu serais... Parce que...","Si tu étais un personnage ? Un héros ? Tu serais... Parce que...","Si tu étais une émotion ? Tu serais... Parce que...","Si tu étais une devise ? Tu serais... Parce que...","Si tu étais un sport ? Tu serais... Parce que...","Si tu étais un vêtement ? Tu serais... Parce que...","Si tu étais un objet ? Tu serais... Parce que...","Si tu étais un dessert ? Tu serais... Parce que...","Si tu étais une boisson chaude ou froide ? Tu serais... Parce que..."];
+
+const THEMES={
+ rencontre:{label:'Votre rencontre',short:'Rencontre',range:[0,4]},
+ profil:{label:'Vous & votre monde',short:'Profil',range:[5,11]},
+ confidences:{label:'Pour la préparation de la cérémonie',short:'Préparation',range:[12,18]},
+ couple:{label:'Votre couple',short:'Couple',range:[19,30]},
+ portrait:{label:'Portrait chinois',short:'Portrait',range:[31,47]}
+};
+const DEFAULT_ANSWERS_REMINDER='Coucou {prenom} ! La date limite approche : il vous reste {jours} jour(s) pour compléter votre questionnaire. Prenez un instant, ça compte beaucoup pour moi 💛';
+const DEFAULT_SPEECH_REMINDER='Attention cher(e) {prenom}, la deadline approche : il ne vous reste que {jours} jour(s) pour m’envoyer votre texte !';
+const PALETTES={
+ gold:{label:'Or',c:'#93672c',strong:'#7a5522'},
+ rose:{label:'Rosé poudré',c:'#b98a8a',strong:'#8f5f5f'},
+ bleu:{label:'Bleu nuit',c:'#5b6f8c',strong:'#3f4f66'},
+ terracotta:{label:'Terracotta',c:'#b9754a',strong:'#8f5530'},
+ lavande:{label:'Lavande',c:'#8a7bab',strong:'#665a82'}
+};
+function themeOf(i){for(const k in THEMES){const[a,b]=THEMES[k].range;if(i>=a&&i<=b)return k}return 'profil'}
+
+const STOPWORDS=new Set("le la les un une des de du et à au aux en que qui ce cet cette ces est été être avoir a avez avons ont vous votre vos nous notre nos je j tu il elle ils elles on se sa son ses leur leurs pour par sur dans avec sans plus moins très bien comme si ne pas mais ou où quand quel quelle quels quelles quoi dont y c d l n s t qu fait faire autre tout toute tous toutes deux premier première premiers premières votre vos assez alors donc car aussi entre chez depuis pendant".split(' '));
+
+function uid(p){return p+Math.random().toString(36).slice(2,9)}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function fmtDate(d){return d?new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'Non définie'}
+function code(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('')}
+
+function seed(){
+ const bank=QUESTIONS.map((text,i)=>({i,text,active:true,theme:themeOf(i)}));
+ return {
+  bank,
+  weddings:[
+   {id:'w1',names:'Julie & Thomas',date:'2027-06-14',place:'Domaine des Étoiles, Ansouis',answersDeadline:'2027-05-15',speechDeadline:'2027-06-01',remindersOn:true,
+    people:[
+     {id:'p1',name:'Julie',role:'marie',code:'JULIE7',phone:'06 12 34 56 78',email:'julie@email.com',answers:{0:'On s’est croisés à un mariage d’amis communs, à Aix. Thomas a renversé son verre sur mes chaussures et a passé la soirée à s’excuser.',3:'14 septembre 2019',1:'Notre road-trip raté en Écosse où on a dormi dans la voiture sous la pluie, en riant aux larmes.',18:'Son calme. Il n’a jamais l’air pressé, même quand tout part en vrille autour de lui.',25:'Une maison avec un grand jardin, du bruit d’enfants et toujours de la musique.',34:'Une saison — l’automne, pour la lumière et les débuts qui recommencent.'},skipped:[13]},
+     {id:'p2',name:'Thomas',role:'marie',code:'THOMAS4',phone:'06 98 76 54 32',answers:{0:'Un mariage à Aix, en septembre. J’ai fait tomber mon verre sur ses chaussures, la honte absolue.',18:'Son rire, franchement. Il traverse toute la pièce.',22:'Qu’on reste des alliés, même dans les mauvais jours.',34:'Une saison — l’été, sans hésiter.',45:'Un objet — une boussole. Elle a toujours su où on allait, même quand je doutais.'},skipped:[]}
+    ,
+     {id:'p3',name:'Marc',role:'intervenant',relation:'Père de Julie',code:'MARC82',phone:'06 11 22 33 44',email:'marc.papa@email.com',speech:'Julie a toujours eu ce truc de foncer sans regarder derrière elle. Le jour où elle nous a annoncé Thomas, elle avait cette même énergie que le jour où elle a appris à faire du vélo : "de toute façon ça va marcher, je le sens."'}
+    ],
+    trame:[
+     {id:uid('t'),time:'15:00',dur:30,label:'Accueil des invités',cat:'accueil',note:'Musique d’ambiance, placement libre'},
+     {id:uid('t'),time:'15:30',dur:5,label:'Entrée des mariés',cat:'ceremonie',note:'Cortège — musique : à confirmer'},
+     {id:uid('t'),time:'15:35',dur:15,label:'Ouverture par Sève',cat:'ceremonie'},
+     {id:uid('t'),time:'15:50',dur:8,label:'Discours — Marc, père de Julie',cat:'discours',person:'Marc'},
+     {id:uid('t'),time:'15:58',dur:15,label:'Échange des vœux',cat:'ceremonie'},
+     {id:uid('t'),time:'16:13',dur:10,label:'Rituel du sable des couleurs',cat:'ceremonie',note:'Prévoir 2 carafes + vase — apporté par la famille'},
+     {id:uid('t'),time:'16:23',dur:7,label:'Signature & vin d’honneur',cat:'sortie'}
+    ],
+    notes:'Insister sur la légèreté — le couple ne veut rien de solennel. Garder le rituel du sable court, Julie est émotive.',
+    constellationSent:false, constellationSentAt:null
+   },
+   {id:'w2',names:'Camille & Antoine',date:'2027-09-05',place:'La Bastide des Vignes, Uzès',answersDeadline:'',speechDeadline:'',remindersOn:true,
+    people:[
+     {id:'p4',name:'Camille',role:'marie',code:'CAMIL9',answers:{0:'Sur une appli, il m’a écrit une punchline sur mon chien en photo de profil.'},skipped:[]},
+     {id:'p5',name:'Antoine',role:'marie',code:'ANTOI3',answers:{},skipped:[]},
+     {id:'p6',name:'Lina',role:'intervenant',relation:'Témoin de Camille',code:'LINA55',speech:''}
+    ],
+    trame:[{id:uid('t'),time:'16:00',dur:20,label:'Accueil des invités',cat:'accueil'}],
+    notes:'', constellationSent:false, constellationSentAt:null
+   }
+  ]
+ };
+}
+
+const KEY='velvet_ceremony_proposal_v7';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed();
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function resetDemo(){db=seed();save();st.weddingId='w1';st.view='admin-weddings';render()}
+
+let st={view:'admin-weddings',weddingId:'w1',adminTab:'people',personId:null,qIndex:0,pendingOnly:false,modal:null,bankOpenTheme:null,session:null};
+
+const SUPABASE_URL='https://pmgqpdjzptryegjfhsry.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtZ3FwZGp6cHRyeWVnamZoc3J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMzg2OTUsImV4cCI6MjA5ODgxNDY5NX0.efAsSxWcpzq6oWX3KfgV-6xcjxppX8Z_3WWi8kmBqqI';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const ADMIN_VIEWS=['admin-weddings','admin-wedding','admin-bank'];
+function isAdminView(v){return ADMIN_VIEWS.includes(v)}
+sb.auth.onAuthStateChange((event,session)=>{
+ st.session=session;
+ if(session){if(st.view==='admin-login')st.view='admin-weddings'}
+ else if(isAdminView(st.view))st.view='admin-login';
+ render();
+});
+async function sendMagicLink(){
+ const email=$('#loginEmail').value.trim();
+ const status=$('#loginStatus'),btn=$('#loginBtn');
+ if(!email){status.textContent='Entrez votre email d’abord.';return}
+ btn.disabled=true;status.textContent='Envoi en cours…';
+ const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.href}});
+ btn.disabled=false;
+ status.textContent=error?'Une erreur est survenue, réessayez.':'Lien envoyé — vérifiez vos emails (et les spams).';
+}
+async function signOutSeve(){await sb.auth.signOut()}
+
+function wedding(id){return db.weddings.find(w=>w.id===(id||st.weddingId))}
+function person(){return wedding().people.find(p=>p.id===st.personId)}
+function activeBank(){return db.bank.filter(q=>q.active)}
+function bankText(i){const q=db.bank.find(q=>q.i===i);return q?q.text:''}
+function pct(p){const active=activeBank();if(!active.length)return 0;const answered=active.filter(q=>String((p.answers||{})[q.i]||'').trim()).length;const skipped=active.filter(q=>(p.skipped||[]).includes(q.i)).length;return Math.round((answered+skipped)/active.length*100)}
+function pendingList(p){return activeBank().filter(q=>!String((p.answers||{})[q.i]||'').trim() && !(p.skipped||[]).includes(q.i))}
+
+function $(s){return document.querySelector(s)}
+const app=()=>document.getElementById('app');
+
+function render(){
+ const ink=['admin-weddings','admin-wedding','admin-bank','admin-login'].includes(st.view);
+ app().className='mode-'+(ink?'ink':'vellum');
+ document.documentElement.style.background=ink?'#ffffff':'#fbf9f4';
+ const curW=db.weddings.find(w=>w.id===st.weddingId);
+ const pal=PALETTES[curW?.themeColor]||PALETTES.gold;
+ document.documentElement.style.setProperty('--vel-gold',pal.c);
+ document.documentElement.style.setProperty('--vel-gold-strong',pal.strong);
+ window.scrollTo(0,0);
+ let html='';
+ if(st.view==='admin-login')html=viewAdminLogin();
+ else if(st.view==='admin-weddings')html=viewAdminWeddings();
+ else if(st.view==='admin-wedding')html=viewAdminWedding();
+ else if(st.view==='admin-bank')html=viewAdminBank();
+ else if(st.view==='guest-login')html=viewGuestLogin();
+ else if(st.view==='welcome')html=viewWelcome();
+ else if(st.view==='question')html=viewQuestion();
+ else if(st.view==='summary')html=viewSummary();
+ else if(st.view==='speaker')html=viewSpeaker();
+ else if(st.view==='vows')html=viewVows();
+ else if(st.view==='guest-constellation')html=viewGuestConstellation();
+ app().innerHTML=html+(st.modal?viewModal():'');
+ if(st.view==='question')drawVeil();
+ if((st.adminTab==='constellation'&&st.view==='admin-wedding')||st.view==='guest-constellation')drawConstellation();
+}
+
+function viewAdminLogin(){
+ return `<div class="view-enter" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:400px">
+   <div class="mark" style="justify-content:center;margin-bottom:26px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5" r="1.6" fill="var(--gold)"/><circle cx="19" cy="12" r="1.2" fill="var(--gold)"/><circle cx="12" cy="19" r="1.6" fill="var(--gold)"/><circle cx="5" cy="12" r="1.2" fill="var(--gold)"/><path d="M12 5 19 12 12 19 5 12Z" stroke="var(--gold)" stroke-width="0.8" opacity=".6"/></svg>Velvet Ceremony</div>
+   <div class="card" style="text-align:center">
+    <h1 style="font-size:24px;font-weight:500">Espace de Sève</h1>
+    <p class="muted" style="margin-top:8px;font-size:13.5px">Entrez votre email, vous recevrez un lien pour vous connecter — pas de mot de passe à retenir.</p>
+    <div class="field" style="margin-top:20px;text-align:left">
+     <input id="loginEmail" type="email" placeholder="vous@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')sendMagicLink()">
+    </div>
+    <button class="btn primary" style="width:100%" id="loginBtn" onclick="sendMagicLink()">Recevoir le lien de connexion</button>
+    <p class="muted" id="loginStatus" style="margin-top:14px;font-size:12.5px;min-height:16px"></p>
+   </div>
+  </div>
+ </div>`
+}
+
+/* ---------------- ADMIN SHELL ---------------- */
+function shellStart(activeNav){
+ return `<div class="admin-shell view-enter">
+  <aside class="rail">
+   <div class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5" r="1.6" fill="var(--gold)"/><circle cx="19" cy="12" r="1.2" fill="var(--gold)"/><circle cx="12" cy="19" r="1.6" fill="var(--gold)"/><circle cx="5" cy="12" r="1.2" fill="var(--gold)"/><path d="M12 5 19 12 12 19 5 12Z" stroke="var(--gold)" stroke-width="0.8" opacity=".6"/></svg>Velvet Ceremony</div>
+   <nav>
+    <a class="${activeNav==='w'?'active':''}" onclick="st.view='admin-weddings';render()">Mariages</a>
+    <a class="${activeNav==='b'?'active':''}" onclick="st.view='admin-bank';render()">Banque de questions</a>
+   </nav>
+   <div class="foot">${st.session?esc(st.session.user.email):'Mon espace privé.'}<br>Officiante de cérémonies laïques.<br><button class="btn ghost small" style="margin-top:10px;padding-left:0" onclick="resetDemo()">↺ Réinitialiser la démo</button><br><button class="btn ghost small" style="margin-top:4px;padding-left:0" onclick="signOutSeve()">Se déconnecter</button></div>
+  </aside>
+  <main class="admin-main">`
+}
+const shellEnd='</main></div>';
+
+function viewAdminWeddings(){
+ return shellStart('w')+`
+  <div class="admin-header row between header-row">
+   <div><div class="eyebrow">Vos mariages</div><h1>Bonjour Sève.</h1><p>Chaque mariage regroupe les mariés et les intervenants que vous invitez individuellement. Ouvrez un dossier pour suivre les réponses ou préparer votre trame.</p></div>
+   <button class="btn primary" onclick="openModal('newWedding')">+ Nouveau mariage</button>
+  </div>
+  <div style="margin-top:8px">
+  ${db.weddings.map(w=>{
+    const maries=w.people.filter(p=>p.role==='marie');
+    const interv=w.people.filter(p=>p.role==='intervenant');
+    return `<div class="wedding-row" onclick="st.weddingId='${w.id}';st.view='admin-wedding';st.adminTab='people';render()">
+     <div><h3>${esc(w.names)}</h3><div class="meta">${new Date(w.date+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})} · ${esc(w.place)}</div></div>
+     <div class="mini-bars">
+      ${maries.map(p=>`<div class="mini-bar"><div class="lbl">${esc(p.name)} · ${pct(p)}%</div><div class="track"><div class="fill" style="width:${pct(p)}%"></div></div></div>`).join('')}
+      <div class="mini-bar"><div class="lbl">${interv.length} intervenant${interv.length>1?'s':''}</div><div class="track"><div class="fill" style="width:100%;opacity:.25"></div></div></div>
+     </div>
+     <button class="btn small" onclick="event.stopPropagation();st.weddingId='${w.id}';st.view='admin-wedding';render()">Ouvrir →</button>
+    </div>`
+  }).join('')}
+  </div>
+ `+shellEnd
+}
+
+function viewAdminBank(){
+ const grouped={};
+ db.bank.forEach(q=>{(grouped[q.theme]=grouped[q.theme]||[]).push(q)});
+ return shellStart('b')+`
+  <div class="admin-header"><div class="eyebrow">Mon patrimoine</div><h1>Banque de questions</h1>
+  <p>Ce sont toutes les questions que vous posez depuis toujours aux mariés. Rien n’est supprimé : désactivez celles que vous ne voulez plus poser, ou modifiez leur formulation — le changement s’applique à tous les mariages.</p></div>
+  ${Object.keys(THEMES).map(k=>{
+    const items=grouped[k]||[];
+    const activeCount=items.filter(q=>q.active).length;
+    return `<div class="bank-theme"><div class="head"><h4>${THEMES[k].label}</h4><span class="row" style="gap:12px"><span class="muted" style="font-size:12px">${activeCount}/${items.length} actives</span><button class="btn ghost small" onclick="openModal('newQuestion','${k}')">+ Ajouter</button></span></div>
+    ${items.map(q=>`<div class="bank-item ${q.active?'':'inactive'}">
+      <div class="switch ${q.active?'on':''}" onclick="toggleBank(${q.i})"><i></i></div>
+      <textarea rows="1" oninput="autoGrow(this)" onchange="editBank(${q.i},this.value)">${esc(q.text)}</textarea>
+      <button class="btn ghost small danger" style="padding:4px 9px" title="Supprimer définitivement" onclick="deleteBankQuestion(${q.i})">✕</button>
+    </div>`).join('')}
+    </div>`
+  }).join('')}
+ `+shellEnd
+}
+
+function toggleBank(i){const q=db.bank.find(q=>q.i===i);q.active=!q.active;save();render()}
+function editBank(i,v){const q=db.bank.find(q=>q.i===i);q.text=v.trim()||q.text;save()}
+function deleteBankQuestion(i){
+ const q=db.bank.find(q=>q.i===i);
+ if(!confirm(`Supprimer définitivement cette question ?\n\n« ${q.text} »\n\nLes réponses déjà données par des mariés à cette question ne seront plus affichées nulle part.`))return;
+ db.bank=db.bank.filter(q=>q.i!==i);save();render()
+}
+function createBankQuestion(){
+ const text=$('#nqText').value.trim();if(!text)return alert('Écrivez d’abord la question.');
+ const theme=$('#nqTheme').value;
+ const i=Math.max(-1,...db.bank.map(q=>q.i))+1;
+ db.bank.push({i,text,active:true,theme});
+ save();st.modal=null;render()
+}
+function autoGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px'}
+
+function viewAdminWedding(){
+ const w=wedding();
+ const tabs=[['people','Personnes'],['answers','Réponses'],['constellation','Constellation'],['prep','Préparation'],['trame','Trame · Export']];
+ return shellStart('w')+`
+  <button class="btn ghost small" style="margin-left:-14px" onclick="st.view='admin-weddings';render()">← Tous les mariages</button>
+  <div class="admin-header row between header-row" style="margin-top:10px">
+   <div><div class="eyebrow">Dossier mariage</div><h1>${esc(w.names)}</h1>
+   <p>${new Date(w.date+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})} · ${esc(w.place)}</p></div>
+   <div>
+    <button class="btn small" onclick="st.personId=null;st.view='guest-login';render()">Aperçu du lien envoyé →</button>
+    <div class="muted" style="font-size:11px;margin-top:6px;max-width:220px">C'est ici (avec un code, ex. JULIE7) que vivent les questions et le scintillement</div>
+   </div>
+  </div>
+  <div class="dates-row">
+   <div class="date-pill"><span class="lbl">Mariage</span><b>${fmtDate(w.date)}</b></div>
+   <div class="date-pill"><span class="lbl">Clôture questionnaire</span><b>${fmtDate(w.answersDeadline)}</b></div>
+   <div class="date-pill"><span class="lbl">Discours à envoyer avant</span><b>${fmtDate(w.speechDeadline)}</b></div>
+   <button class="btn ghost small" onclick="openModal('editDates')">Modifier les dates</button>
+  </div>
+  <div class="tabs">${tabs.map(([k,l])=>`<button class="${st.adminTab===k?'active':''}" onclick="st.adminTab='${k}';render()">${l}</button>`).join('')}</div>
+  ${st.adminTab==='people'?tabPeople(w):''}
+  ${st.adminTab==='answers'?tabAnswers(w):''}
+  ${st.adminTab==='constellation'?tabConstellation(w):''}
+  ${st.adminTab==='prep'?tabPrep(w):''}
+  ${st.adminTab==='trame'?tabTrame(w):''}
+ `+shellEnd
+}
+
+function tabPeople(w){
+ const maries=w.people.filter(p=>p.role==='marie');
+ const intervenants=w.people.filter(p=>p.role==='intervenant');
+ return `<div class="people-section"><div class="row between"><h3 style="font-size:17px;font-weight:600">Les mariés</h3><button class="btn small" onclick="openModal('newPerson','marie')">+ Ajouter</button></div>
+  <div class="people-grid">${maries.map(p=>personCircle(p)).join('')||'<p class="muted" style="font-size:13px;margin-top:10px">Personne pour l’instant.</p>'}</div>
+ </div>
+ <hr class="hairline" style="margin:26px 0">
+ <div class="people-section"><div class="row between"><h3 style="font-size:17px;font-weight:600;color:var(--sage-strong)">Intervenants</h3><button class="btn small" onclick="openModal('newPerson','intervenant')">+ Ajouter</button></div>
+  <div class="col" style="gap:10px;margin-top:14px">${intervenants.map(p=>personRect(p)).join('')||'<p class="muted" style="font-size:13px">Personne pour l’instant.</p>'}</div>
+ </div>`
+}
+function personCircle(p){
+ const pc=pct(p);
+ return `<div class="person-wrap">
+  <div class="person-ring" style="background:conic-gradient(var(--gold) calc(${pc}*1%),var(--line) 0)">
+  <div class="person-row" title="${pc}% du parcours · ${pendingList(p).length} question(s) en attente">
+  <div class="name">${esc(p.name)}</div>
+  <span class="code-chip" style="font-size:11px;padding:4px 10px">${p.code}</span>
+  ${contactRow(p)}
+  <button class="btn ghost small" style="padding:6px 12px" onclick="copyInvite('${p.id}')">${p.email||p.phone?'Inviter':'Copier'}</button>
+  </div>
+  </div>
+  <button class="person-edit" title="Modifier cette fiche" onclick="openModal('editPerson','${p.id}')">✎</button>
+ </div>`
+}
+function personRect(p){
+ const wrote=(p.speech||'').trim();
+ const words=wrote?wrote.split(/\s+/).filter(Boolean).length:0;
+ return `<div class="person-rect" draggable="true" ondragstart="dragPersonStart('${p.id}')" ondragover="event.preventDefault()" ondrop="dropPerson('${p.id}')">
+  <span class="drag-handle-rect" title="Glisser pour réordonner">⠿</span>
+  <div class="pr-info">
+   <div class="name" style="font-size:15px">${esc(p.name)}</div>
+   <div class="sub">${esc(p.relation||'Intervenant')}</div>
+  </div>
+  <span class="tag ${wrote?'ok':'pending'}">${wrote?('env. '+Math.max(1,Math.round(words/140))+' min'):'à venir'}</span>
+  <span class="code-chip alt">${p.code}</span>
+  ${contactRow(p)}
+  <button class="btn ghost small" onclick="copyInvite('${p.id}')">${p.email||p.phone?'Inviter':'Copier'}</button>
+  <button class="person-edit-rect" title="Modifier cette fiche" onclick="openModal('editPerson','${p.id}')">✎</button>
+ </div>`
+}
+async function copyInvite(id){
+ const p=wedding().people.find(x=>x.id===id);
+ const t=`${p.name}, voici votre accès personnel pour le mariage de ${wedding().names}.\nLien : [lien du mariage]\nVotre code : ${p.code}`;
+ if(p.email){
+  window.location.href=`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent('Votre accès — mariage de '+wedding().names)}&body=${encodeURIComponent(t)}`;
+  return;
+ }
+ if(p.phone){
+  window.location.href=`sms:${p.phone.replace(/\s+/g,'')}&body=${encodeURIComponent(t)}`;
+  return;
+ }
+ try{await navigator.clipboard.writeText(t)}catch(e){}
+ alert('Ni email ni téléphone renseigné pour cette personne — l’invitation est copiée, à coller manuellement.');
+}
+function deletePerson(id){
+ const w=wedding();const p=w.people.find(x=>x.id===id);if(!p)return;
+ if(!confirm(`Supprimer définitivement la fiche de ${p.name} ?\nSon code (${p.code}) ne fonctionnera plus.`))return;
+ w.people=w.people.filter(x=>x.id!==id);st.modal=null;save();render()
+}
+function savePerson(id){
+ const p=wedding().people.find(x=>x.id===id);if(!p)return;
+ p.name=$('#epName').value.trim()||p.name;
+ if(p.role==='intervenant')p.relation=$('#epRelation').value.trim();
+ p.phone=$('#epPhone').value.trim();
+ p.email=$('#epEmail').value.trim();
+ st.modal=null;save();render()
+}
+let draggedPersonId=null;
+function dragPersonStart(id){draggedPersonId=id}
+function dropPerson(targetId){
+ if(!draggedPersonId||draggedPersonId===targetId)return;
+ const w=wedding();
+ const intervenants=w.people.filter(p=>p.role==='intervenant');
+ const others=w.people.filter(p=>p.role!=='intervenant');
+ const fromIdx=intervenants.findIndex(p=>p.id===draggedPersonId);
+ const toIdx=intervenants.findIndex(p=>p.id===targetId);
+ if(fromIdx<0||toIdx<0)return;
+ const[moved]=intervenants.splice(fromIdx,1);
+ intervenants.splice(toIdx,0,moved);
+ w.people=[...others,...intervenants];
+ draggedPersonId=null;save();render()
+}
+async function sendConstellation(){
+ const w=wedding();w.constellationSent=true;w.constellationSentAt=new Date().toISOString();save();
+ const t=`Votre Constellation de couple est prête à découvrir : elle vous attend dans votre espace, avec votre code personnel.`;
+ try{await navigator.clipboard.writeText(t)}catch(e){}
+ alert('Constellation envoyée — le message est aussi copié, prêt à coller dans un SMS ou un email.');
+ render()
+}
+
+function tabAnswers(w){
+ const maries=w.people.filter(p=>p.role==='marie');
+ return `<div class="card"><div class="row between" style="margin-bottom:6px"><h3 style="font-size:17px;font-weight:600">Réponses des mariés</h3><span class="muted" style="font-size:12px">${activeBank().length} questions actives</span></div>
+ <div class="grid2" style="margin-top:14px">
+ ${maries.map(p=>`<div>
+   <div class="row between" style="margin-bottom:10px"><b>${esc(p.name)}</b><span class="tag ok">${pct(p)}%</span></div>
+   ${(p.vows||'').trim()?`<div style="margin-bottom:16px;padding:12px;border:1px dashed var(--line);border-radius:var(--r-s)"><div class="eyebrow" style="font-size:10px">Vœux (${(p.vows.trim().split(/\s+/).filter(Boolean).length)} mots)</div><div style="margin-top:4px;font-style:italic">${esc(p.vows)}</div></div>`:''}
+   ${activeBank().map(q=>{const a=(p.answers||{})[q.i];const skip=(p.skipped||[]).includes(q.i);
+     return a?`<div style="margin-bottom:14px"><div class="muted" style="font-size:12px">${esc(q.text)}</div><div style="margin-top:4px">${esc(a)}</div></div>`
+      :skip?`<div style="margin-bottom:14px;opacity:.5"><div class="muted" style="font-size:12px">${esc(q.text)}</div><div style="margin-top:4px;font-style:italic">Préfère ne pas répondre</div></div>`:''
+   }).join('')||'<p class="muted" style="font-size:13px">Aucune réponse pour l’instant.</p>'}
+ </div>`).join('')}
+ </div></div>`
+}
+
+function tabConstellation(w){
+ const maries=w.people.filter(p=>p.role==='marie');
+ if(maries.length<2||!maries.some(p=>Object.keys(p.answers||{}).length))
+  return `<div class="card" style="text-align:center;padding:60px 20px"><p class="muted">La Constellation prendra forme dès que les mariés auront commencé à répondre, chacun de leur côté.</p></div>`;
+ return `<div class="row between" style="margin-bottom:14px">
+  <p class="muted" style="font-size:13px;max-width:440px">Un aperçu poétique du couple, préparé à partir de leurs réponses. Vous seule le voyez, jusqu’à ce que vous choisissiez de le partager.</p>
+  ${w.constellationSent?`<span class="tag ok">Envoyée aux mariés le ${new Date(w.constellationSentAt).toLocaleDateString('fr-FR')}</span>`:`<button class="btn primary small" onclick="sendConstellation()">Envoyer aux mariés →</button>`}
+ </div>
+ <div class="const-wrap"><div class="eyebrow" style="color:var(--vel-gold)">Constellation du couple</div><h2 style="margin-top:8px">${esc(w.names)}</h2>
+ <svg id="constSvg" viewBox="0 0 720 380" style="width:100%;height:auto;margin-top:18px"></svg>
+ <div id="constCards" class="const-cards"></div>
+ <div id="constWords" class="const-words"></div>
+ </div>`
+}
+function buildConstellationData(w){
+ const maries=w.people.filter(p=>p.role==='marie').slice(0,2);
+ const stars=[];
+ Object.keys(THEMES).forEach((theme,ti)=>{
+  maries.forEach((p,pi)=>{
+   const q=activeBank().find(q=>q.theme===theme && String((p.answers||{})[q.i]||'').trim());
+   if(q)stars.push({theme,ti,pi,person:p.name,text:(p.answers[q.i]||'').trim(),qtext:q.text})
+  })
+ });
+ const allText=maries.map(p=>Object.values(p.answers||{}).join(' ')).join(' ').toLowerCase();
+ const freq={};
+ allText.split(/[^a-zàâäéèêëïîôöùûüçœ’']+/i).forEach(w=>{w=w.replace(/’/g,"'");if(w.length>3&&!STOPWORDS.has(w))freq[w]=(freq[w]||0)+1});
+ const words=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);
+ return {stars,words,maries};
+}
+function drawConstellation(){
+ const w=wedding();const svg=document.getElementById('constSvg');if(!svg)return;
+ const {stars,words}=buildConstellationData(w);
+ const themeKeys=Object.keys(THEMES);
+ const n=themeKeys.length;
+ const margin=80;
+ const colX=themeKeys.map((_,i)=>n>1?margin+(720-2*margin)*(i/(n-1)):360);
+ const rowY=[150,255];
+ stars.forEach(s=>{s.x=colX[s.ti];s.y=rowY[s.pi]});
+ let paths='';
+ for(let ti=0;ti<n-1;ti++){
+  const a=stars.filter(s=>s.ti===ti); const b=stars.filter(s=>s.ti===ti+1);
+  if(a.length&&b.length)paths+=`<line x1="${a[0].x}" y1="${a[0].y}" x2="${b[0].x}" y2="${b[0].y}" stroke="var(--vel-gold)" stroke-width="1" opacity=".28"/>`;
+ }
+ Object.values(THEMES).forEach((t,ti)=>{
+  const pair=stars.filter(s=>s.ti===ti);
+  if(pair.length===2)paths+=`<line x1="${pair[0].x}" y1="${pair[0].y}" x2="${pair[1].x}" y2="${pair[1].y}" stroke="var(--vel-gold)" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>`;
+ });
+ const dots=stars.map(s=>{
+  const anchor=s.x>360?'end':'start'; const dx=s.x>360?-12:12;
+  return `<circle cx="${s.x}" cy="${s.y}" r="9" fill="var(--vel-gold)" opacity=".14">${reduceMotion()?'':'<animate attributeName="r" values="9;13;9" dur="4s" repeatCount="indefinite"/>'}</circle>
+   <circle cx="${s.x}" cy="${s.y}" r="4" fill="var(--vel-gold)"/>
+   <text x="${s.x+dx}" y="${s.y-10}" font-size="11" text-anchor="${anchor}" font-weight="600">${esc(s.person)}</text>
+   <text x="${s.x+dx}" y="${s.y+4}" font-size="10" text-anchor="${anchor}" opacity=".7">${THEMES[s.theme].short||THEMES[s.theme].label}</text>`
+ }).join('');
+ svg.innerHTML=`<line x1="60" y1="330" x2="680" y2="330" stroke="var(--vel-line)" opacity=".5"/>${paths}${dots}`;
+ document.getElementById('constCards').innerHTML=stars.map(s=>`<div class="const-card"><div class="who">${esc(s.person)} · ${THEMES[s.theme].label}</div><p>“${esc(s.text.length>140?s.text.slice(0,140)+'…':s.text)}”</p></div>`).join('');
+ document.getElementById('constWords').innerHTML=words.map(w=>`<span>${esc(w)}</span>`).join(' · ');
+}
+
+function tabPrep(w){
+ return `<div class="card">
+  <div class="row between"><h3 style="font-size:17px;font-weight:600">Préambule d’ouverture</h3><span class="tag info">✦ IA</span></div>
+  <p class="muted" style="font-size:13px;margin-top:4px">Un premier jet de vos mots d’accueil, généré à partir de ce que ${esc(w.names)} ont raconté. À relire et ajuster avant de vous en servir — jamais utilisé tel quel sans votre validation.</p>
+  <textarea id="preambuleBox" style="min-height:180px;margin-top:14px" lang="fr" spellcheck="true" oninput="savePreambule(this.value)" placeholder="Cliquez sur « Générer » pour un premier jet, ou écrivez directement ici…">${esc(w.preambule||'')}</textarea>
+  <div class="row between" style="margin-top:10px">
+   <button class="btn primary small" id="genPreambuleBtn" onclick="generatePreambule()">✦ Générer avec l’IA</button>
+   <span class="muted" id="preambuleStatus" style="font-size:12px"></span>
+  </div>
+ </div>
+ <div class="card" style="margin-top:16px">
+  <h3 style="font-size:17px;font-weight:600">Vos notes de cérémonie</h3>
+  <p class="muted" style="font-size:13px;margin-top:4px">Le texte que vous préparez pour ce mariage. Sauvegarde automatique.</p>
+  <textarea style="min-height:220px;margin-top:14px" lang="fr" spellcheck="true" oninput="saveNotes(this.value)" placeholder="Écrivez ou dictez vos notes…">${esc(w.notes||'')}</textarea>
+  <div class="row" style="margin-top:14px">
+   <button class="mic" id="micBtn" onclick="toggleDictation()">🎙</button>
+   <span class="muted" style="font-size:12.5px" id="micLabel">Dicter au micro</span>
+  </div>
+  <div class="dictate-box">La dictée utilise la reconnaissance vocale de votre navigateur. Selon l’appareil, elle peut être indisponible dans cet aperçu — elle fonctionnera normalement une fois l’application installée.</div>
+ </div>`
+}
+function saveNotes(v){wedding().notes=v;clearTimeout(window._nt);window._nt=setTimeout(save,400)}
+function savePreambule(v){wedding().preambule=v;clearTimeout(window._pt);window._pt=setTimeout(save,400)}
+async function generatePreambule(){
+ const w=wedding();
+ const btn=$('#genPreambuleBtn'),status=$('#preambuleStatus'),box=$('#preambuleBox');
+ const sample=(typeof claude!=='undefined'&&claude.use)?await claude.use('sample').catch(()=>null):null;
+ if(!sample){status.textContent="Fonction IA indisponible dans cet aperçu.";return}
+ const maries=w.people.filter(p=>p.role==='marie');
+ const snippets=[];
+ maries.forEach(p=>{
+  activeBank().forEach(q=>{
+   if((q.theme==='rencontre'||q.theme==='couple')&&(p.answers||{})[q.i]){
+    snippets.push(`${p.name} — ${q.text} → ${p.answers[q.i]}`)
+   }
+  })
+ });
+ const prompt=`Tu écris pour Sève, officiante de cérémonie laïque de mariage. Rédige le préambule d'ouverture qu'elle prononcera à voix haute devant les invités pour le mariage de ${w.names}, le ${fmtDate(w.date)} à ${w.place}.
+Style : chaleureux, personnel, élégant, jamais ampoulé ni cliché. Elle s'adresse directement aux mariés et aux invités, à la première personne. Longueur : 150 à 250 mots. Pas de didascalies, pas de crochets, juste le texte à dire.
+Voici des éléments réels racontés par les mariés à utiliser pour personnaliser le texte (n'invente rien d'autre) :
+${snippets.slice(0,8).join('\n')||'(Peu de réponses collectées pour l’instant — reste plus général mais toujours chaleureux.)'}`;
+ btn.disabled=true;status.textContent='Génération en cours…';
+ try{
+  const res=await sample(prompt,{onText:({text})=>{box.value=text;savePreambule(text)}});
+  box.value=res.text;savePreambule(res.text);
+  status.textContent='Généré — relisez avant de vous en servir.';
+ }catch(e){
+  status.textContent=e?.code==='not_granted'?'Autorisation refusée.':'Une erreur est survenue, réessayez.';
+ }
+ btn.disabled=false;
+}
+let recog=null,recogOn=false;
+function toggleDictation(){
+ const btn=$('#micBtn'),lbl=$('#micLabel');
+ if(recogOn){recogOn=false;btn.classList.remove('live');lbl.textContent='Dicter au micro';try{recog&&recog.stop()}catch(e){}return}
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){lbl.textContent='Micro non disponible dans cet aperçu';return}
+ try{
+  recog=new SR();recog.lang='fr-FR';recog.continuous=true;recog.interimResults=false;
+  recog.onresult=(e)=>{const ta=document.querySelector('.card textarea');let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';ta.value=(ta.value+' '+t).trim();saveNotes(ta.value)};
+  recog.onerror=()=>{lbl.textContent='Micro indisponible ici';btn.classList.remove('live');recogOn=false};
+  recog.onend=()=>{if(recogOn){lbl.textContent='Micro indisponible ici';btn.classList.remove('live');recogOn=false}};
+  recog.start();recogOn=true;btn.classList.add('live');lbl.textContent='Écoute en cours…';
+ }catch(e){lbl.textContent='Micro non disponible dans cet aperçu'}
+}
+
+function tabTrame(w){
+ const cats={accueil:'Accueil',ceremonie:'Cérémonie',discours:'Discours',sortie:'Sortie'};
+ const endTime=(t,d)=>{const[h,m]=t.split(':').map(Number);const total=h*60+m+Number(d);return String(Math.floor(total/60)%24).padStart(2,'0')+':'+String(total%60).padStart(2,'0')};
+ return `<div class="grid2 trame-grid">
+  <div class="card">
+   <div class="row between"><h3 style="font-size:17px;font-weight:600">Déroulé de la cérémonie</h3><button class="btn small" onclick="openModal('newTrame')">+ Ajouter un temps</button></div>
+   ${w.trame.map((t,idx)=>`<div class="trame-row">
+     <div class="time">${t.time}<br><span class="sub">${t.dur} min</span></div>
+     <div><div class="lbl">${esc(t.label)}</div>${t.note?`<div class="sub">${esc(t.note)}</div>`:''}<span class="tag" style="margin-top:4px;display:inline-block">${cats[t.cat]||t.cat}</span>${t.music?.title?`<span class="tag ${t.music.mode==='live'?'ok':'info'}" style="margin-top:4px;margin-left:4px;display:inline-flex;align-items:center;gap:4px">${musicIcon()} ${esc(t.music.title)} · ${t.music.mode==='live'?'live':'MP3'} · ${({avant:'avant',pendant:'pendant',apres:'après'})[t.music.timing||'pendant']}</span>`:''}</div>
+     <div class="row">
+      <button class="btn ghost small" title="Musique" onclick="openModal('editMusic','${t.id}')">${musicIcon()}</button>
+      <button class="btn ghost small" onclick="moveTrame(${idx},-1)">↑</button>
+      <button class="btn ghost small" onclick="moveTrame(${idx},1)">↓</button>
+     </div>
+     <button class="btn ghost small danger" onclick="removeTrame('${t.id}')">Retirer</button>
+    </div>`).join('')}
+  </div>
+  <div class="export-doc">
+   <div class="eyebrow" style="color:var(--vel-gold)">Document Wedding Planner</div>
+   <h2>${esc(w.names)}</h2>
+   <p class="muted" style="font-size:13px;margin:6px 0 18px">${new Date(w.date+'T12:00').toLocaleDateString('fr-FR')} · ${esc(w.place)} · préparé par Sève</p>
+   ${w.trame.map(t=>`<div class="export-row"><span class="t">${t.time}–${endTime(t.time,t.dur)}</span><span class="t">${t.dur}’</span><span class="lbl">${esc(t.label)}${t.person?` <span class="muted">(${esc(t.person)})</span>`:''}${t.music?.title?` <span class="muted">— ${esc(t.music.title)} (${t.music.mode==='live'?'live':'MP3'}${t.music.timing?', '+({avant:'avant',pendant:'pendant',apres:'après'}[t.music.timing]):''})</span>`:''}</span><span class="muted note">${esc(t.note||(t.cat==='discours'?'début / fin uniquement':''))}</span></div>`).join('')}
+   <p class="muted" style="font-size:11.5px;margin-top:16px">Les discours n’apparaissent ici que par leurs horaires — jamais leur contenu.</p>
+   <button class="btn small" style="margin-top:16px" onclick="window.print()">Imprimer / exporter</button>
+  </div>
+ </div>`
+}
+function moveTrame(idx,dir){const w=wedding();const j=idx+dir;if(j<0||j>=w.trame.length)return;[w.trame[idx],w.trame[j]]=[w.trame[j],w.trame[idx]];save();render()}
+function removeTrame(id){const w=wedding();w.trame=w.trame.filter(t=>t.id!==id);save();render()}
+function musicIcon(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>`}
+function saveMusic(id){
+ const t=wedding().trame.find(x=>x.id===id);if(!t)return;
+ const title=$('#mzTitle').value.trim();
+ const mode=document.querySelector('input[name="mzMode"]:checked')?.value||'live';
+ const timing=document.querySelector('input[name="mzTiming"]:checked')?.value||'pendant';
+ t.music=title?{title,mode,timing}:null;
+ st.modal=null;save();render()
+}
+
+/* ---------------- MODALS ---------------- */
+function openModal(type,role){st.modal={type,role};render()}
+function closeModal(){st.modal=null;render()}
+function viewModal(){
+ const m=st.modal;
+ if(m.type==='newWedding')return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Nouveau mariage</h3>
+  <div class="field"><label>Prénoms des mariés</label><input id="mNames" placeholder="Ex. Lucie & Adam"></div>
+  <div class="field"><label>Date</label><input id="mDate" type="date"></div>
+  <div class="field"><label>Lieu</label><input id="mPlace" placeholder="Ex. Mas des Cigales"></div>
+  <div class="row" style="margin-top:10px"><button class="btn primary" onclick="createWedding()">Créer le mariage</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+ </div></div>`;
+ if(m.type==='newPerson')return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>${m.role==='marie'?'Ajouter un marié':'Ajouter un intervenant'}</h3>
+  <div class="field"><label>Prénom</label><input id="pName"></div>
+  ${m.role==='intervenant'?'<div class="field"><label>Lien avec les mariés</label><input id="pRelation" placeholder="Ex. Témoin, sœur, ami…"></div>':''}
+  <div class="field"><label>Téléphone (facultatif)</label><input id="pPhone" type="tel" placeholder="Ex. 06 12 34 56 78"></div>
+  <div class="field"><label>Email (facultatif)</label><input id="pEmail" type="email" placeholder="Ex. prenom@email.com"></div>
+  <div class="row" style="margin-top:10px"><button class="btn primary" onclick="createPerson('${m.role}')">Ajouter</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+ </div></div>`;
+ if(m.type==='editPerson'){const p=wedding().people.find(x=>x.id===m.role);if(!p)return'';return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Modifier la fiche</h3>
+  <div class="field"><label>Prénom</label><input id="epName" value="${esc(p.name)}"></div>
+  ${p.role==='intervenant'?`<div class="field"><label>Lien avec les mariés</label><input id="epRelation" value="${esc(p.relation||'')}"></div>`:''}
+  <div class="field"><label>Téléphone (facultatif)</label><input id="epPhone" type="tel" value="${esc(p.phone||'')}"></div>
+  <div class="field"><label>Email (facultatif)</label><input id="epEmail" type="email" value="${esc(p.email||'')}"></div>
+  <div class="row" style="margin-top:10px"><button class="btn primary" onclick="savePerson('${p.id}')">Enregistrer</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+  <hr class="hairline" style="margin:18px 0">
+  <button class="btn ghost danger" style="width:100%" onclick="deletePerson('${p.id}')">Supprimer définitivement cette fiche</button>
+ </div></div>`}
+ if(m.type==='newTrame')return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Ajouter un temps</h3>
+  <div class="field"><label>Heure</label><input id="trTime" type="time" value="16:00"></div>
+  <div class="field"><label>Durée (minutes)</label><input id="trDur" type="number" value="10"></div>
+  <div class="field"><label>Libellé</label><input id="trLabel" placeholder="Ex. Discours de témoin"></div>
+  <div class="field"><label>Catégorie</label><select id="trCat"><option value="accueil">Accueil</option><option value="ceremonie">Cérémonie</option><option value="discours">Discours</option><option value="sortie">Sortie</option></select></div>
+  <div class="field"><label>Note technique (facultatif)</label><input id="trNote"></div>
+  <div class="row" style="margin-top:10px"><button class="btn primary" onclick="createTrame()">Ajouter</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+ </div></div>`;
+ if(m.type==='editMusic'){const t=wedding().trame.find(x=>x.id===m.role);if(!t)return'';return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Musique — ${esc(t.label)}</h3>
+  <div class="field"><label>Titre</label><input id="mzTitle" value="${esc(t.music?.title||'')}" placeholder="Ex. Comme des enfants — Cœur de pirate"></div>
+  <div class="field"><label>Interprétation</label>
+   <div class="row" style="gap:16px">
+    <label style="margin:0;text-transform:none;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px"><input type="radio" name="mzMode" value="live" ${(!t.music||t.music.mode==='live')?'checked':''}> Live</label>
+    <label style="margin:0;text-transform:none;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px"><input type="radio" name="mzMode" value="mp3" ${t.music?.mode==='mp3'?'checked':''}> MP3</label>
+   </div>
+  </div>
+  <div class="field"><label>Joué</label>
+   <div class="row" style="gap:16px">
+    <label style="margin:0;text-transform:none;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px"><input type="radio" name="mzTiming" value="avant" ${t.music?.timing==='avant'?'checked':''}> Avant</label>
+    <label style="margin:0;text-transform:none;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px"><input type="radio" name="mzTiming" value="pendant" ${(!t.music?.timing||t.music.timing==='pendant')?'checked':''}> Pendant</label>
+    <label style="margin:0;text-transform:none;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px"><input type="radio" name="mzTiming" value="apres" ${t.music?.timing==='apres'?'checked':''}> Après</label>
+   </div>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="btn primary" onclick="saveMusic('${t.id}')">Enregistrer</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+ </div></div>`}
+ if(m.type==='newQuestion')return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Nouvelle question</h3>
+  <div class="field"><label>Thème</label><select id="nqTheme">${Object.keys(THEMES).map(k=>`<option value="${k}" ${k===m.role?'selected':''}>${THEMES[k].label}</option>`).join('')}</select></div>
+  <div class="field"><label>Question</label><textarea id="nqText" rows="3" placeholder="Écrivez la question…"></textarea></div>
+  <div class="row" style="margin-top:10px"><button class="btn primary" onclick="createBankQuestion()">Ajouter</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+ </div></div>`;
+ if(m.type==='editDates'){const w=wedding();return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Dates, rappels & couleur</h3>
+  <div class="field"><label>Couleur de cette cérémonie</label>
+   <div class="row" style="gap:10px">${Object.keys(PALETTES).map(k=>`<button class="palette-swatch ${((w.themeColor||'gold')===k)?'active':''}" data-k="${k}" style="background:${PALETTES[k].c}" title="${PALETTES[k].label}" onclick="selectPalette('${k}')"></button>`).join('')}</div>
+   <p class="muted" style="font-size:11px;margin-top:6px">S’applique à l’espace des mariés et de l’intervenant — pas à votre espace à vous.</p>
+  </div>
+  <div class="field"><label>Date du mariage</label><input id="dWedding" type="date" value="${w.date}"></div>
+  <div class="field"><label>Clôture du questionnaire des mariés</label><input id="dAnswers" type="date" value="${w.answersDeadline||''}"></div>
+  <div class="field"><label>Date limite d'envoi des textes des intervenants</label><input id="dSpeech" type="date" value="${w.speechDeadline||''}"></div>
+  <div class="field row" style="align-items:center;gap:10px">
+   <div class="switch ${w.remindersOn?'on':''}" onclick="this.classList.toggle('on')" id="remindersSwitch"><i></i></div>
+   <label style="margin:0;text-transform:none;font-weight:500;color:var(--text)">Envoyer des rappels automatiques</label>
+  </div>
+  <div class="field"><label>Message de rappel — mariés</label><textarea id="dAnswersMsg" rows="3">${esc(w.answersReminderMsg||DEFAULT_ANSWERS_REMINDER)}</textarea></div>
+  <div class="field"><label>Message de rappel — intervenants</label><textarea id="dSpeechMsg" rows="3">${esc(w.speechReminderMsg||DEFAULT_SPEECH_REMINDER)}</textarea></div>
+  <p class="muted" style="font-size:11.5px;margin-top:-6px">{prenom} et {jours} seront remplacés automatiquement par le prénom de la personne et le nombre de jours restants.</p>
+  <div class="dictate-box">Ces rappels sont pour l'instant une prévisualisation : pour qu'ils partent vraiment par email ou SMS, il faudra brancher un service d'envoi à la mise en production.</div>
+  <div class="row" style="margin-top:14px"><button class="btn primary" onclick="saveDates()">Enregistrer</button><button class="btn ghost" onclick="closeModal()">Annuler</button></div>
+ </div></div>`}
+ return '';
+}
+function selectPalette(k){document.querySelectorAll('.palette-swatch').forEach(b=>b.classList.toggle('active',b.dataset.k===k))}
+function saveDates(){
+ const w=wedding();
+ w.themeColor=document.querySelector('.palette-swatch.active')?.dataset.k||'gold';
+ w.date=$('#dWedding').value||w.date;
+ w.answersDeadline=$('#dAnswers').value;
+ w.speechDeadline=$('#dSpeech').value;
+ w.answersReminderMsg=$('#dAnswersMsg').value.trim();
+ w.speechReminderMsg=$('#dSpeechMsg').value.trim();
+ w.remindersOn=document.getElementById('remindersSwitch').classList.contains('on');
+ save();st.modal=null;render()
+}
+function createWedding(){
+ const names=$('#mNames').value.trim(),date=$('#mDate').value,place=$('#mPlace').value.trim();
+ if(!names||!date)return alert('Prénoms et date sont nécessaires.');
+ const w={id:uid('w'),names,date,place,people:[],trame:[],notes:'',constellationSent:false,constellationSentAt:null,answersDeadline:'',speechDeadline:'',remindersOn:true};
+ db.weddings.push(w);save();st.weddingId=w.id;st.view='admin-wedding';st.adminTab='people';st.modal=null;render()
+}
+function createPerson(role){
+ const name=$('#pName').value.trim();if(!name)return alert('Le prénom est nécessaire.');
+ const p={id:uid('p'),name,role,code:code(),answers:{},skipped:[],phone:$('#pPhone').value.trim(),email:$('#pEmail').value.trim()};
+ if(role==='intervenant'){p.relation=$('#pRelation').value.trim();p.speech=''}
+ wedding().people.push(p);save();st.modal=null;render()
+}
+function createTrame(){
+ const t={id:uid('t'),time:$('#trTime').value,dur:Number($('#trDur').value)||5,label:$('#trLabel').value.trim()||'Temps de cérémonie',cat:$('#trCat').value,note:$('#trNote').value.trim()};
+ wedding().trame.push(t);wedding().trame.sort((a,b)=>a.time.localeCompare(b.time));save();st.modal=null;render()
+}
+
+/* ---------------- GUEST ---------------- */
+function viewGuestLogin(){
+ const w=wedding();
+ return `<div class="guest-shell view-enter"><div class="panel">
+  <div class="eyebrow">${esc(w.names)} · ${new Date(w.date+'T12:00').toLocaleDateString('fr-FR')}</div>
+  <h1>Bienvenue.</h1>
+  <p class="lead">Entrez simplement le code personnel que je vous ai envoyé. Il vous ramènera toujours à votre propre espace.</p>
+  <input class="code-input" id="loginCode" autocomplete="one-time-code" placeholder="VOTRE CODE" onkeydown="if(event.key==='Enter')doLogin()">
+  <div><button class="btn primary" style="margin-top:8px" onclick="doLogin()">Entrer dans mon espace</button></div>
+ </div>
+ <button class="quit-link" onclick="st.view='admin-wedding';render()">← Retour à mon espace</button>
+ </div>`
+}
+function doLogin(){
+ const c=$('#loginCode').value.trim().toUpperCase();
+ const p=wedding().people.find(p=>p.code===c);
+ if(!p)return alert('Ce code n’est pas reconnu pour ce mariage.');
+ st.personId=p.id;st.pendingOnly=false;st.qIndex=activeBank()[0]?.i||0;
+ st.view=p.role==='intervenant'?'speaker':'welcome';render()
+}
+function viewWelcome(){
+ const p=person();
+ return `<div class="guest-shell view-enter"><div class="panel">
+  <div class="spark">✦</div>
+  <div class="eyebrow">Bonjour ${esc(p.name).toUpperCase()}</div>
+  <h1>Votre histoire, avec vos mots.</h1>
+  <p class="lead">Il n’y a rien à réussir ici. Répondez spontanément, une anecdote ou quelques mots suffisent. Si une question ne vous inspire pas aujourd’hui, passez à la suivante : elle vous attendra pour plus tard.</p>
+  <p class="lead" style="font-size:13px;margin-top:16px">Vos réponses sont personnelles — elles sont destinées uniquement à moi, pour préparer votre cérémonie.</p>
+  ${wedding().answersDeadline?`<div class="deadline-note">✦ Idéalement avant le ${fmtDate(wedding().answersDeadline)}</div>`:''}
+  <div class="theme-toc">${Object.keys(THEMES).map(k=>{const n=activeBank().filter(q=>q.theme===k).length;return `<button class="theme-chip" onclick="startTheme('${k}')"><span>${THEMES[k].label}</span><i>${n}</i></button>`}).join('')}</div>
+  <button class="btn primary" style="margin-top:26px" onclick="startQuestions()">${pct(p)>0?'Reprendre mon parcours':'Commencer'}</button>
+  <div class="row" style="justify-content:center;margin-top:14px;gap:10px">
+   <button class="btn ghost" onclick="st.view='vows';render()">✎ ${(p.vows||'').trim()?'Reprendre mes vœux':'Écrire mes vœux'}</button>
+   ${wedding().constellationSent?`<button class="btn ghost" onclick="st.view='guest-constellation';render()">✦ Découvrir votre Constellation</button>`:''}
+  </div>
+ </div></div>`
+}
+function startQuestions(){
+ const p=person();const pend=pendingList(p);
+ st.qIndex=(pct(p)>0&&pend.length)?pend[0].i:activeBank()[0].i;
+ st.pendingOnly=false;st.view='question';render()
+}
+function startTheme(theme){
+ const p=person();
+ const items=activeBank().filter(q=>q.theme===theme);
+ const firstPending=items.find(q=>!String((p.answers||{})[q.i]||'').trim() && !(p.skipped||[]).includes(q.i));
+ st.qIndex=firstPending?firstPending.i:items[0].i;
+ st.pendingOnly=false;st.view='question';render()
+}
+function viewQuestion(){
+ const p=person(),q=db.bank.find(q=>q.i===st.qIndex),v=(p.answers||{})[st.qIndex]||'',pc=pct(p);
+ const themeItems=activeBank().filter(x=>x.theme===q.theme);
+ const posInTheme=themeItems.findIndex(x=>x.i===st.qIndex)+1;
+ const isVeryFirst=(q.theme===Object.keys(THEMES)[0]&&posInTheme===1);
+ return `<div class="q-stage">
+  <svg class="constellation-veil" id="veilSvg" viewBox="0 0 900 700"></svg>
+  <div class="q-top"><div>${esc(p.name)}</div><div class="eyebrow">${esc(wedding().names)}</div><div class="r"><span id="pctText">${pc}%</span> <button class="btn ghost small" style="padding:4px 8px" onclick="toggleSound()" title="Activer ou couper les sons">${soundIcon()}</button></div></div>
+  <div class="q-bar"><span style="width:${pc}%"></span></div>
+  <div class="q-main">
+   <div class="eyebrow">${THEMES[q.theme].label.toUpperCase()} · ${posInTheme} sur ${themeItems.length}</div>
+   <h1>${esc(q.text)}</h1>
+   <textarea id="ans" placeholder="Écrivez ici…" lang="fr" spellcheck="true" oninput="autosaveAnswer(this.value)">${esc(v)}</textarea>
+   <div class="q-actions">
+    <div class="row" style="gap:14px">
+     <button class="btn ghost"${isVeryFirst?' disabled style="opacity:.3"':''} onclick="goBack()">← Question précédente</button>
+    </div>
+    <button class="btn primary" onclick="nextQuestion()">Suivant →</button>
+   </div>
+  </div>
+  <div class="autosave" id="autosaveBox"><i></i> <span id="autosaveText">Sauvegarde automatique</span></div>
+  <button class="quit-link" onclick="st.personId=null;st.view='guest-login';render()">← Quitter (tout est déjà enregistré)</button>
+ </div>`
+}
+function autosaveAnswer(v){
+ const p=person();p.answers=p.answers||{};
+ clearTimeout(window._at);window._at=setTimeout(()=>{
+  if(v.trim()){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex)}else{delete p.answers[st.qIndex]}
+  save();
+  const bar=document.querySelector('.q-bar span');if(bar)bar.style.width=pct(p)+'%';
+  const top=document.getElementById('pctText');if(top)top.textContent=pct(p)+'%';
+  const box=document.getElementById('autosaveBox'),txt=document.getElementById('autosaveText');
+  if(box){box.classList.remove('pulse');void box.offsetWidth;box.classList.add('pulse')}
+  if(txt){txt.textContent='Enregistré ✓';clearTimeout(window._atxt);window._atxt=setTimeout(()=>{txt.textContent='Sauvegarde automatique'},1400)}
+ },350)
+}
+function nextQuestion(){
+ const v=$('#ans').value.trim();const p=person();p.answers=p.answers||{};
+ if(v){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex)}
+ save();chimeNext();advance()
+}
+function goBack(){
+ const ta=$('#ans');
+ if(ta){const v=ta.value.trim();const p=person();p.answers=p.answers||{};if(v){p.answers[st.qIndex]=v;p.skipped=(p.skipped||[]).filter(x=>x!==st.qIndex)}save()}
+ chimeSoft();
+ const q=db.bank.find(q=>q.i===st.qIndex);
+ const themeAll=activeBank().filter(x=>x.theme===q.theme).map(x=>x.i);
+ const pos=themeAll.indexOf(st.qIndex);
+ if(pos>0){st.qIndex=themeAll[pos-1];render();return}
+ const themeKeys=Object.keys(THEMES);
+ const ti=themeKeys.indexOf(q.theme);
+ for(let i=ti-1;i>=0;i--){
+  const items=activeBank().filter(x=>x.theme===themeKeys[i]).map(x=>x.i);
+  if(items.length){st.qIndex=items[items.length-1];render();return}
+ }
+}
+function advance(){
+ const p=person();
+ const curTheme=db.bank.find(q=>q.i===st.qIndex).theme;
+ const themeAll=activeBank().filter(x=>x.theme===curTheme).map(x=>x.i);
+ const themeCandidates=st.pendingOnly?pendingList(p).filter(x=>x.theme===curTheme).map(x=>x.i):themeAll;
+ const pos=themeCandidates.indexOf(st.qIndex);
+ if(pos>=0&&pos<themeCandidates.length-1){st.qIndex=themeCandidates[pos+1];render();return}
+ if(!st.pendingOnly){const ap=themeAll.indexOf(st.qIndex);if(ap<themeAll.length-1){st.qIndex=themeAll[ap+1];render();return}}
+ const themeKeys=Object.keys(THEMES);
+ const startIdx=themeKeys.indexOf(curTheme);
+ for(let i=1;i<=themeKeys.length;i++){
+  const k=themeKeys[(startIdx+i)%themeKeys.length];
+  const pend=pendingList(p).filter(x=>x.theme===k);
+  if(pend.length){st.qIndex=pend[0].i;render();return}
+ }
+ st.view='summary';render()
+}
+function viewSummary(){
+ const p=person(),pend=pendingList(p),pc=pct(p);
+ return `<div class="guest-shell view-enter"><div class="panel">
+  <div class="eyebrow">Votre parcours</div><div class="bigpct">${pc}%</div>
+  <h2 style="font-size:24px;font-weight:500;margin-top:6px">${pc===100?'Tout est prêt.':'C’est déjà très bien.'}</h2>
+  <p class="lead" style="margin-top:12px">${pend.length?`Il reste ${pend.length} question${pend.length>1?'s':''} que vous avez laissée${pend.length>1?'s':''} de côté. Vous pouvez ${pend.length>1?'les':'la'} reprendre maintenant, ou revenir plus tard avec votre code.`:'Vous avez parcouru toutes les questions. Merci pour votre confiance.'}</p>
+  ${pend.length?`<button class="btn primary" style="margin-top:22px" onclick="resumePending()">Reprendre les questions restantes</button>`:''}
+  ${wedding().constellationSent?`<div><button class="btn ghost" style="margin-top:12px" onclick="st.view='guest-constellation';render()">✦ Découvrir votre Constellation</button></div>`:''}
+  <div><button class="btn ghost" style="margin-top:12px" onclick="st.personId=null;st.view='guest-login';render()">Terminer pour aujourd’hui</button></div>
+ </div></div>`
+}
+function resumePending(){const p=pendingList(person());if(!p.length)return;st.pendingOnly=true;st.qIndex=p[0].i;st.view='question';render()}
+
+function viewGuestConstellation(){
+ const w=wedding();
+ return `<div class="guest-shell view-enter"><div class="panel" style="max-width:820px">
+  <div class="spark">✦</div><div class="eyebrow">${esc(w.names)}</div>
+  <h1 style="font-size:clamp(28px,4.4vw,44px)">Votre Constellation.</h1>
+  <p class="lead" style="margin:14px auto 0">Un instantané poétique de votre couple, que j’ai composé à partir de ce que vous avez, chacun, raconté.</p>
+  <div class="const-wrap" style="text-align:left;margin-top:26px">
+   <svg id="constSvg" viewBox="0 0 720 380" style="width:100%;height:auto"></svg>
+   <div id="constCards" class="const-cards"></div>
+   <div id="constWords" class="const-words"></div>
+  </div>
+ </div>
+ <button class="quit-link" onclick="st.view='welcome';render()">← Retour</button>
+ </div>`
+}
+
+function viewSpeaker(){
+ const p=person(),words=(p.speech||'').trim().split(/\s+/).filter(Boolean).length;
+ return `<div class="guest-shell view-enter"><div class="panel" style="max-width:760px">
+  <div class="spark">✦</div><div class="eyebrow">Bonjour ${esc(p.name).toUpperCase()}</div>
+  <h1>Quelques mots qui comptent.</h1>
+  <p class="lead">Une cérémonie laïque laisse beaucoup de liberté : souvenirs, humour et émotion ont toute leur place. L’idée reste de célébrer les mariés avec bienveillance — écrivez comme vous leur parleriez. Je vous aiderai si besoin.</p>
+  ${wedding().speechDeadline?`<div class="deadline-note">✦ À envoyer avant le ${fmtDate(wedding().speechDeadline)}</div>`:''}
+  <textarea class="speaker-textarea" style="text-align:left;margin-top:26px" id="speech" lang="fr" spellcheck="true" oninput="saveSpeech(this.value)" placeholder="Votre texte…">${esc(p.speech||'')}</textarea>
+  <div class="row between"><span class="tag" id="wc">${words} mots · env. ${Math.max(1,Math.round(words/140))} min</span><span class="tag ok">Sauvegarde automatique</span></div>
+ </div>
+ <button class="quit-link" onclick="st.personId=null;st.view='guest-login';render()">← Quitter</button>
+ </div>`
+}
+function saveSpeech(v){const p=person();p.speech=v;clearTimeout(window._st);window._st=setTimeout(()=>{save();const w=v.trim().split(/\s+/).filter(Boolean).length;const el=$('#wc');if(el)el.textContent=`${w} mots · env. ${Math.max(1,Math.round(w/140))} min`},350)}
+
+function viewVows(){
+ const p=person(),words=(p.vows||'').trim().split(/\s+/).filter(Boolean).length;
+ return `<div class="guest-shell view-enter"><div class="panel" style="max-width:760px">
+  <div class="spark">✦</div><div class="eyebrow">Bonjour ${esc(p.name).toUpperCase()}</div>
+  <h1>Vos vœux.</h1>
+  <p class="lead">Cet espace est le vôtre, séparé du questionnaire — pour écrire librement ce que vous direz à votre moitié le jour J. Personne d’autre que moi ne le lira avant la cérémonie.</p>
+  <textarea class="speaker-textarea" style="text-align:left;margin-top:26px" id="vows" lang="fr" spellcheck="true" oninput="saveVows(this.value)" placeholder="Vos vœux…">${esc(p.vows||'')}</textarea>
+  <div class="row between"><span class="tag" id="vwc">${words} mots · env. ${Math.max(1,Math.round(words/140))} min</span><span class="tag ok">Sauvegarde automatique</span></div>
+ </div>
+ <button class="quit-link" onclick="st.view='welcome';render()">← Retour</button>
+ </div>`
+}
+function saveVows(v){const p=person();p.vows=v;clearTimeout(window._vt);window._vt=setTimeout(()=>{save();const w=v.trim().split(/\s+/).filter(Boolean).length;const el=$('#vwc');if(el)el.textContent=`${w} mots · env. ${Math.max(1,Math.round(w/140))} min`},350)}
+
+/* subtle decorative starfield on question screen */
+const reduceMotion=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* gentle, generated chimes — no audio files needed */
+let soundOn=localStorage.getItem('vc_sound')!=='off';
+let actx=null;
+function soundIcon(){
+ const body='<path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>';
+ const waves=soundOn?'<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18 6a8.5 8.5 0 0 1 0 12"/>':'<line x1="15.5" y1="8" x2="20.5" y2="15"/><line x1="20.5" y1="8" x2="15.5" y2="15"/>';
+ return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}${waves}</svg>`;
+}
+function toggleSound(){soundOn=!soundOn;localStorage.setItem('vc_sound',soundOn?'on':'off');const b=document.querySelector('.q-top .r button');if(b)b.innerHTML=soundIcon()}
+
+function phoneIcon(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 13l5 2v4a2 2 0 0 1-2 2C9.5 21 3 14.5 3 6a2 2 0 0 1 1-2z"/></svg>`}
+function waIcon(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-3.9A8 8 0 1 1 9 18.6z"/><path d="M9 10c0 3 2 5 5 5"/></svg>`}
+function mailIcon(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 6.5l8 6 8-6"/></svg>`}
+function contactRow(p){
+ const links=[];
+ if(p.phone)links.push(`<a class="contact-ic" href="tel:${esc(p.phone.replace(/\s+/g,''))}" title="Appeler ${esc(p.name)}" onclick="event.stopPropagation()">${phoneIcon()}</a>`);
+ if(p.phone)links.push(`<a class="contact-ic" target="_blank" href="https://wa.me/${esc(p.phone.replace(/[^0-9]/g,''))}" title="WhatsApp" onclick="event.stopPropagation()">${waIcon()}</a>`);
+ if(p.email)links.push(`<a class="contact-ic" href="mailto:${esc(p.email)}" title="Envoyer un email" onclick="event.stopPropagation()">${mailIcon()}</a>`);
+ return links.length?`<div class="contact-row">${links.join('')}</div>`:'';
+}
+function chime(freqs,dur,vol){
+ if(!soundOn)return;
+ try{
+  actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const t0=actx.currentTime;
+  freqs.forEach((f,i)=>{
+   const o=actx.createOscillator(),g=actx.createGain();
+   o.type='sine';o.frequency.value=f;
+   const start=t0+i*0.07;
+   g.gain.setValueAtTime(0,start);
+   g.gain.linearRampToValueAtTime(vol,start+0.02);
+   g.gain.exponentialRampToValueAtTime(0.0001,start+dur);
+   o.connect(g);g.connect(actx.destination);
+   o.start(start);o.stop(start+dur+0.02);
+  });
+ }catch(e){}
+}
+function chimeNext(){chime([659,988],0.32,0.05)}
+function chimeSoft(){chime([523],0.24,0.035)}
+function drawVeil(){
+ const svg=document.getElementById('veilSvg');if(!svg)return;
+ const still=reduceMotion();
+ let s='';const rnd=(seed)=>{const x=Math.sin(seed*999)*10000;return x-Math.floor(x)};
+ const sparklePath='M0 -6 C0.8 -2 2 -0.8 6 0 C2 0.8 0.8 2 0 6 C-0.8 2 -2 0.8 -6 0 C-2 -0.8 -0.8 -2 0 -6 Z';
+ for(let i=0;i<16;i++){const x=rnd(i)*900,y=rnd(i+50)*700,scale=1.3+rnd(i+100)*1.8,base=.55+rnd(i+150)*.15,peak=.95,dur=2.6+rnd(i+400)*3,begin=rnd(i+500)*4;
+  s+=`<g transform="translate(${x},${y}) scale(${scale.toFixed(2)})"><path d="${sparklePath}" fill="#8a6a2f" opacity="${base}">${still?'':`<animate attributeName="opacity" values="${base};${peak};${base}" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>`}</path></g>`
+ }
+ for(let i=0;i<40;i++){const x=rnd(i+700)*900,y=rnd(i+750)*700,r=.6+rnd(i+800)*.7;
+  s+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#c9b48a" opacity="${0.06+rnd(i+900)*0.08}"/>`
+ }
+ for(let i=0;i<5;i++){const x1=rnd(i+300)*900,y1=rnd(i+310)*700,x2=x1+80+rnd(i+320)*160,y2=y1+40+rnd(i+330)*120;
+  s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--vel-gold)" stroke-width=".6" opacity=".12"/>`
+ }
+ svg.innerHTML=s;
+}
+
+(async()=>{
+ const {data:{session}}=await sb.auth.getSession();
+ st.session=session;
+ if(!session && isAdminView(st.view))st.view='admin-login';
+ render();
+})();
+</script>
