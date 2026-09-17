@@ -858,6 +858,7 @@ function viewGuestLogin(){
   <input class="code-input" id="loginCode" autocomplete="one-time-code" placeholder="VOTRE CODE" onkeydown="if(event.key==='Enter')doLogin()">
   <div><button class="btn primary" style="margin-top:8px" onclick="doLogin()">Entrer dans mon espace</button></div>
  </div>
+ <button class="quit-link" style="position:static;margin-top:22px;opacity:.5" onclick="st.view='admin-login';render()">Vous êtes Sève ? Connexion officiante</button>
  </div>`
 }
 function doLogin(){
