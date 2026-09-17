@@ -303,7 +303,7 @@ const ADMIN_VIEWS=['admin-weddings','admin-wedding','admin-bank'];
 function isAdminView(v){return ADMIN_VIEWS.includes(v)}
 sb.auth.onAuthStateChange((event,session)=>{
  st.session=session;
- if(session){if(st.view==='admin-login')st.view='admin-weddings'}
+ if(session){if(st.view==='admin-login'||st.view==='guest-login')st.view='admin-weddings'}
  else if(isAdminView(st.view))st.view='admin-login';
  render();
 });
@@ -857,7 +857,7 @@ function viewGuestLogin(){
   <p class="lead">Entrez simplement le code personnel que Sève vous a envoyé. Il vous ramènera toujours à votre propre espace.</p>
   <input class="code-input" id="loginCode" autocomplete="one-time-code" placeholder="VOTRE CODE" onkeydown="if(event.key==='Enter')doLogin()">
   <div><button class="btn primary" style="margin-top:8px" onclick="doLogin()">Entrer dans mon espace</button></div>
-  <button class="quit-link" style="position:static;margin-top:14px;opacity:.5" onclick="st.view='admin-login';render()">Vous êtes Sève ? Connexion officiante</button>
+  <button class="quit-link" style="position:static;margin-top:14px;opacity:.5" onclick="history.replaceState(null,'','?sev');st.view='admin-login';render()">Vous êtes Sève ? Connexion officiante</button>
  </div>
  </div>`
 }
